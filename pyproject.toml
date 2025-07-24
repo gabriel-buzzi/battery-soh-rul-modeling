@@ -1,0 +1,56 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "src"
+version = "0.0.1"
+description = "Utilizing features of cycling data from Severson et. al. fast-charging battery dataset to estimate cells SOH and RUL."
+authors = [
+  { name = "Gabriel Buzzi Sanches" },
+]
+
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    
+]
+requires-python = "~=3.10.0"
+
+
+[tool.ruff]
+line-length = 79
+src = ["src"]
+include = ["pyproject.toml", "src/**/*.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "D"]  # Enable PEP8, isort, and docstring checks
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+force-sort-within-sections = true
+combine-as-imports = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+
+[tool.pixi.project]
+name = "severson_features_soh_rul"
+description = "Utilizing features of cycling data from Severson et. al. fast-charging battery dataset to estimate cells SOH and RUL."
+version = "0.1.0"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+
+[tool.pixi.dependencies]
+python = "~=3.10.0"
+ruff = "*"
+pip = "*"
+pre-commit = ">=4.2.0,<5"
+
+[tool.pixi.pypi-dependencies]
+python-dotenv = "*"
+
+[tool.pixi.pypi-dependencies.src]
+path = "."
+editable = true
