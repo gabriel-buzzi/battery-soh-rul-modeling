@@ -1,0 +1,15 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.6  # Use the latest Ruff version you are using
+    hooks:
+      - id: ruff-format
+        name: Ruff Format
+        args: ["--line-length=79"]  # Optional: enforce line length
+
+      - id: ruff
+        name: Ruff Check with Fix
+        args: ["--fix"]
+
+      - id: ruff
+        name: Ruff Final Check (No Fix)
+        args: []
