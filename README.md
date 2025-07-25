@@ -1,4 +1,8 @@
 # severson_features_soh_rul
+For installing the ipykernel run the following 
+´´´
+python -m ipykernel install --user --name pixi-severson_features_soh_rul --display-name "Pixi (severson_features_soh_rul)"
+´´´
 
 <a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
     <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
