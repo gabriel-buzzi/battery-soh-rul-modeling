@@ -1,0 +1,17 @@
+data:
+  external_data_paths: # Paths to the .mat files provided by Severson et. al.
+    - /home/gabriel/data/severson/raw/2017-05-12_batchdata_updated_struct_errorcorrect.mat 
+    - /home/gabriel/data/severson/raw/2017-06-30_batchdata_updated_struct_errorcorrect.mat
+    - /home/gabriel/data/severson/raw/2018-04-12_batchdata_updated_struct_errorcorrect.mat
+  loaded_data_path: ./data/external/cells_data.h5
+  min_cycle_length: 100 # number of samples
+  max_cycle_length: 6000 # number of samples
+  cells_rated_capacity: 1.1 # Ah
+  margin_for_upper_capacity_bound: 1.2
+  time_jump_threshold: 400 # sec
+  target_frequency: 1 # Hz
+  processed_cells_data_folder: ./data/processed/cells
+  
+analysis:
+  figures_folder: ./reports/figures
+  example_cell: b2c32
