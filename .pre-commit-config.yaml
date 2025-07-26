@@ -9,7 +9,9 @@ repos:
       - id: ruff
         name: Ruff Check with Fix
         args: ["--fix"]
+        exclude: ".*\\.ipynb$"
 
       - id: ruff
         name: Ruff Final Check (No Fix)
         args: []
+        exclude: ".*\\.ipynb$"
