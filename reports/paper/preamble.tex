@@ -1,0 +1,54 @@
+% Input and font
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[english]{babel}
+
+% Page layout and spacing
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% Math
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{siunitx}
+\sisetup{output-exponent-marker=\ensuremath{\mathrm{e}}}
+
+% Tables
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{longtable}
+
+% Graphics
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subfig}
+\usepackage{caption}
+\usepackage{subcaption}
+
+% Colors
+\usepackage{xcolor}
+
+% Citations and references
+\usepackage{natbib}
+\bibliographystyle{unsrtnat}
+
+% Hyperlinks
+\usepackage[colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
+
+% Glossaries and acronyms
+\usepackage[acronym]{glossaries}
+\makeglossaries
+
+% Cross-references
+\usepackage{cleveref}
+
+% Custom commands
+\newcommand{\inserttable}[1]{\input{tables/#1}}
+\newcommand{\insertfigure}[1]{\input{figures/#1}}
+
+% Diagrams
+\usepackage{tikz}
+\usetikzlibrary{positioning, shapes, calc}

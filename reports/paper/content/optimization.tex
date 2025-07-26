@@ -1,0 +1,70 @@
+\section{Model Training and Optimization}
+% Introducing the purpose and approach
+This section describes the methodology for training and optimizing machine learning models to estimate the State of Health (\gls{soh}) and Remaining Useful Life (\gls{rul}) of lithium-ion batteries, utilizing the features extracted from the dataset detailed in prior sections. Machine learning models are mathematical frameworks that identify patterns in data to predict outcomes, here mapping cycle features to \gls{soh} or \gls{rul}. Separate models were trained for \gls{soh} and \gls{rul} to avoid the complexity of joint estimation, focusing on generalization to cells not included in the training data, a critical requirement for applications such as battery management systems in electric vehicles or energy storage.
+
+\subsection{Data Preparation}
+
+% Describing train-test split
+To ensure models generalize to unseen cells, the dataset of 124 cells was partitioned into training and test sets by randomly assigning entire cells, preventing any cell’s data from appearing in both sets. This approach mitigates data leakage, where models could exploit specific cell behaviors, leading to overly optimistic performance estimates. As presented in \cref{tab:splits_cells_summary}, the training set comprises 99 cells (80,618 cycles), and the test set includes 25 cells (18,480 cycles), adhering to an approximate 80:20 split, a standard practice to balance training data availability with robust evaluation.
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{lrr}
+        \toprule
+        \textbf{Partition} & \textbf{No. of Cells} & \textbf{Total Samples (Cycles)} \\
+        \midrule
+        Training & 99 & 80618 \\
+        Test     & 25 & 18480 \\
+        \midrule
+        \textbf{Total} & \textbf{124} & \textbf{99098} \\
+        \bottomrule
+    \end{tabular}
+    \caption{Division of cells and total samples (cycles) into training and test sets.}
+    \label{tab:splits_cells_summary}
+\end{table}
+
+% Describing feature scaling
+Features were standardized using Standard Scaling, transforming each feature to have a mean of zero and a standard deviation (\gls{std}) of one, based on statistics derived from the training set. Standardization ensures that features with different scales (e.g., voltage mean in volts vs. unitless kurtosis) contribute equally to model training, preventing bias toward larger-magnitude features. The scaling parameters from the training set were applied to the test set to maintain consistency, mirroring real-world scenarios where new data are processed using established parameters.
+
+\subsection{Model Training and Evaluation}
+
+% Describing model training
+Model training entails optimizing internal parameters (weights) to minimize prediction errors on the training data. In this study, models learn to map cycle features (e.g., voltage mean, temperature \gls{std}) to \gls{soh} or \gls{rul}, minimizing the Mean Squared Error (\gls{mse}), which quantifies the average squared difference between predicted and actual values, penalizing larger errors more heavily. Ground truth \gls{soh} and \gls{rul} values from all cycles of the 99 training cells were utilized, leveraging the dataset’s full-life data. In practical applications, full-life data may be unavailable, necessitating alternative approaches: (1) personalized models trained on early cycles of a specific cell for its future predictions, or (2) general models trained on early cycles from multiple cells, applicable to any cell at any stage. These methods are challenging, as early-cycle data may not capture aging patterns, a significant hurdle in battery research. Given the availability of full-life data, this study uses all cycles from training cells to assess feature and model performance for unseen cells, aligning with the objective of generalization.
+
+% Describing model evaluation
+Model performance was evaluated by generating predictions for the test set (25 unseen cells) and comparing them to ground truth \gls{soh} and \gls{rul} values using three metrics:
+
+\begin{itemize}
+    \item \textbf{Mean Absolute Error (\gls{mae}):} The average absolute difference between predicted and actual values, expressed in the target’s units (e.g., percentage for \gls{soh}, cycles for \gls{rul}).
+    \[
+    \mathrm{MAE} = \frac{1}{n} \sum_{i=1}^{n} \left| y_i - \hat{y}_i \right|
+    \]
+    
+    \item \textbf{Root Mean Squared Error (\gls{rmse}):} The square root of \gls{mse}, emphasizing larger errors while maintaining the target’s units.
+    \[
+    \mathrm{RMSE} = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2}
+    \]
+    
+    \item \textbf{Coefficient of Determination (\gls{r2}):} A metric from 0 to 1, indicating the proportion of variance in the target explained by the model, with 1 representing perfect predictions.
+    \[
+    R^2 = 1 - \frac{\sum_{i=1}^{n} (y_i - \hat{y}_i)^2}{\sum_{i=1}^{n} (y_i - \bar{y})^2}
+    \]
+\end{itemize}
+
+For inference, models require voltage, current, and temperature signals from a single full charge-discharge cycle, sampled at 1 Hz or higher, processed into the 15 features described previously.
+
+\subsection{Hyperparameter Optimization}
+
+% Describing hyperparameter optimization
+Machine learning models rely on hyperparameters—configurable settings that define their structure or learning process, such as the number of trees in a Random Forest or the learning rate in a neural network. Unlike weights, hyperparameters are set prior to training and typically determined empirically. An automated optimization process was employed using the Tree-structured Parzen Estimator (TPE), a Bayesian optimization algorithm that iteratively explores a predefined hyperparameter search space, balancing exploration of new combinations with exploitation of promising ones to minimize \gls{mse}. For detailed information regarding TPE, please refer to \cite{tpe_2011}.
+
+% Describing cross-validation
+To prevent overfitting, where models perform well on training data but poorly on unseen data, hyperparameter combinations were evaluated using Group K-Fold cross-validation with 5 folds, as illustrated in \cref{fig:kfold}. The 99 training cells were divided into 5 groups, with each group serving as a validation set once while the others form the training set. Grouping ensures that all cycles of a cell remain in the same fold, avoiding data leakage. The average \gls{mse} across the 5 validation sets informs the TPE optimizer, ensuring robust hyperparameter selection. The test set remains excluded from optimization, simulating real-world conditions where ground truth for new cells is unavailable, thus ensuring unbiased evaluation.
+
+\insertfigure{optimization/kfold}
+
+% Summarizing the methodology
+This methodology leverages full-life data from training cells to develop models that generalize to unseen cells, addressing the challenges of \gls{soh} and \gls{rul} estimation. Through standardized features, \gls{mse} minimization, and hyperparameter optimization via TPE and cross-validation, the approach ensures robust predictions, applicable to battery management despite the dataset’s controlled experimental conditions.
+
+% \insertfigure{fig_model}
+% \inserttable{tbl_dataset}

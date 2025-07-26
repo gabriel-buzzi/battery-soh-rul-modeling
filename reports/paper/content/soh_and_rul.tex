@@ -1,0 +1,19 @@
+\section{State-of-Health (SoH) and Remaining Useful Life (RUL)}
+
+How both are calculated on this dataset: 
+
+\[ SoH_n = \frac{\text{Max Discharge Capacity of nth Cycle}}{\text{Rated Cell Capacity}} \]
+
+\[ EoL = \text{Cycle when SoH is 80\%} \]
+
+\[ RUL_n = EoL - n \]
+
+RUL limitation of being define by cycle count: real-world applications don't have well defined cycles.
+
+SOH ground truth limitation: rarely a cell undergoes full charge on real life.
+
+RUL ground truth limitation: need data from fully aged cells to know it.
+
+\insertfigure{soh_and_rul/soh_train_test_dist}
+\insertfigure{soh_and_rul/rul_train_test_dist}
+% \inserttable{tbl_dataset}

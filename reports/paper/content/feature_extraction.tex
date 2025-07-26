@@ -1,0 +1,68 @@
+\section{Feature Extraction}
+
+% Introducing the purpose and approach
+Feature extraction is a pivotal step in estimating the State of Health (\gls{soh}) and Remaining Useful Life (\gls{rul}) of lithium-ion battery cells, particularly for cells unseen by the model during training. Since \gls{soh} and \gls{rul} evolve gradually on a cycle-by-cycle basis, analyzing raw signals sample-by-sample—especially in fast-charging scenarios—is impractical due to noise and high dimensionality. Instead, aggregating information from entire charge-discharge cycles provides a more meaningful representation of battery degradation. While one could concatenate all samples from a cycle and input them directly into a machine learning model, this risks introducing collinear features and spurious correlations from irrelevant signal variations. Alternative dimensionality reduction techniques, such as Principal Component Analysis (\gls{pca}), Partial Least Squares (\gls{pls}), or Kernel \gls{pca}, could transform cycle samples into a lower-dimensional latent space in an unsupervised manner, with the transformed data then used for supervised learning. Similarly, neural network auto-encoders, including those leveraging recurrent architectures or convolutional processing of time-series-turned-images, offer sophisticated transformations by encoding signals into compact embeddings. However, directly feeding raw signals into complex \gls{nn} models, while feasible, demands significant computational resources, hindering deployment on portable devices or electric vehicles. Consequently, the most widely adopted approach in the literature, which we employ here, involves calculating a small set of statistical metrics from voltage, current, and temperature signals per cycle. These metrics serve as features for training supervised machine learning models to estimate \gls{soh} and \gls{rul}, balancing simplicity and effectiveness.
+
+\subsection{Signals Preprocessing}
+
+% Detailing preprocessing steps
+Before computing statistical metrics, the voltage, current, and temperature signals require preprocessing to ensure consistency and reliability:
+
+\begin{enumerate}
+    \item \textbf{Time gap removal:} Intermittent gaps in data collection were addressed by concatenating signals, as these discontinuities do not impact the cycle-wide statistical metrics targeted in this study.
+    \item \textbf{Invalid cycle filtering:} Cycles with durations below 100 seconds (approximately 1.7 minutes) or above 6000 seconds (approximately 1 hour 40 minutes) were excluded, deviating from the typical 40-to-60-minute range and likely indicating collection or annotation errors.
+    \item \textbf{Sampling rate standardization:} Variations in sampling rates across cycles, possibly due to hardware adjustments balancing data detail and volume, were normalized to 1Hz using linear interpolation. This ensures uniform representation of cycle segments in the statistical metrics.
+\end{enumerate}
+
+\subsection{Statistical Metrics}
+
+% Listing and explaining metrics
+Post-preprocessing, the following statistical metrics were computed for each cycle’s voltage, current, and temperature signals:
+
+\begin{enumerate}
+    \item \textbf{Mean:} The average signal value over the cycle.
+    \item \textbf{Median:} The central value when the signal is sorted by magnitude.
+    \item \textbf{Standard Deviation (\gls{std}):} A measure of signal variability.
+    \item \textbf{Interquartile Range (\gls{iqr}):} The range between the 25th and 75th percentiles, capturing the middle 50\% spread.
+    \item \textbf{Kurtosis:} An indicator of the signal distribution’s tailedness.
+    \item \textbf{Differential Entropy:} A measure of signal randomness, computed only for voltage due to infinite values arising in current and temperature calculations, possibly from near-constant segments or noise.
+\end{enumerate}
+
+This yielded 16 features per cycle: 6 for voltage, 5 for current, and 5 for temperature, forming a compact yet informative representation of the battery’s state. 
+
+\subsection{Features Processing}
+
+% Addressing outliers and noise
+Despite preprocessing, some cycles exhibited outlier feature values, evident in \cref{fig:full_cycle_features_without_filter}. Such anomalies, common in real-world settings with unknown cells, can disrupt model training. For training data, we mitigated these issues while preserving them in test data to assess real-world robustness and avoid data leakage, once both processing steps applied relies on the feature values of the cycles around the cycle being processed. Two processing steps were applied:
+
+\begin{enumerate}
+    \item \textbf{Spike removal:} For each feature per cell, a 10-cycle sliding window identified values below the 5th or above the 95th percentile, replacing them with the prior cycle’s value to eliminate spikes.
+    \item \textbf{Smoothing:} A first-order Savitzky-Golay filter with a 10-cycle window was used to dampen cycle-to-cycle oscillations, which do not reflect the gradual evolution of \gls{soh} and \gls{rul}.
+\end{enumerate}
+
+The processed features, shown in \cref{fig:full_cycle_features}, retain degradation trends while reducing noise and anomalies.
+
+\insertfigure{features_extraction/full_cycle_features_without_filter}
+\insertfigure{features_extraction/full_cycle_features}
+
+\subsection{Features Analysis}
+
+% Analyzing feature trends
+The processed feature trajectories in \cref{fig:full_cycle_features} reveal distinct aging patterns. Voltage mean decreases while median increases, likely due to heightened variability (\gls{std} and \gls{iqr}) from rising internal resistance. Voltage kurtosis and differential entropy decline, possibly as extended constant voltage phases in aged cells yield more uniform signals. Current mean remains near zero, reflecting balanced charge-discharge durations, while median decreases due to prolonged constant-voltage charging with lower currents. Current \gls{std} drops as aged cells handle high currents less variably, and \gls{iqr} rises then falls, possibly tied to impedance shifts. Temperature features generally increase, driven by greater heat from internal resistance, though kurtosis shows a rise-then-fall pattern, meriting further study.
+
+% Correlation analysis
+Pearson correlation coefficients between features and targets (\gls{soh} and \gls{rul}), shown in \cref{fig:correlation_full_cycle_filtered_only}, highlight strong relationships, especially among voltage features, making them key candidates for modeling. Spearman coefficients in \cref{fig:spearman_full_cycle_filtered_only} often exceed Pearson values, suggesting non-linear dependencies.
+
+\insertfigure{features_extraction/correlation_full_cycle_filtered_only}
+\insertfigure{features_extraction/spearman_full_cycle_filtered_only}
+
+\subsection{Feature Selection}
+
+% Explaining feature selection
+Given the 16 extracted features, not all contribute equally to the estimation of \gls{soh} and \gls{rul}. Some may introduce noise or redundancy, particularly in models that lack built-in feature selection mechanisms. While bivariate correlation analysis can identify individual linear relationships with the target, it fails to capture more complex, multivariate interactions.
+
+To address this, we applied a feature selection strategy based on feature importance derived from a Random Forest model. Specifically, we used a Random Forest with 10 estimators — a lightweight yet sufficiently robust configuration that balances stability and computational efficiency. This choice helps mitigate the sensitivity of single decision trees to data splits, providing more reliable importance estimates without incurring high computational cost.
+
+We further enhanced the robustness of the feature importance ranking by using Group K-Fold cross-validation with 10 folds, where each group corresponds to an individual cell. The training set consists of 99 unique cells, allowing for a meaningful and well-balanced 10-fold split. This ensures that the training and validation sets remain group-independent, preventing data leakage between folds. Using 10 folds allows each cell to be evaluated multiple times across different validation splits, increasing the reliability of the aggregated feature importance scores.
+
+In each fold, we trained the Random Forest on the training partition and recorded the feature importance. These importances were then summed across all folds and averaged to produce a final ranking. The top-ranked features were selected for subsequent modeling. This process helps retain the most informative degradation indicators while discarding less relevant or redundant ones, ultimately improving the predictive performance of downstream models by accounting for non-linear and multi-feature interactions.

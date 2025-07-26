@@ -1,0 +1,45 @@
+\documentclass[11pt]{article}
+
+\input{preamble}
+
+\begin{document}
+
+\newacronym{soh}{SOH}{State-of-Health}
+\newacronym{rul}{RUL}{Remaining Useful Life}
+\newacronym{eol}{EoL}{End-of-Life}
+\newacronym{pca}{PCA}{Principal Component Analysis}
+\newacronym{pls}{PLS}{Partial Least Squares}
+\newacronym{nn}{NN}{Neural Network}
+\newacronym{iqr}{IQR}{Interquartile Range}
+\newacronym{std}{STD}{Standard Deviation}
+\newacronym{pcc}{PCC}{Pearson Correlation Coeficient}
+\newglossaryentry{mse}{name=MSE, description={Mean Squared Error, the average of squared differences between predicted and actual values, used to measure model accuracy}}
+\newglossaryentry{mae}{name=MAE, description={Mean Absolute Error, the average of absolute differences between predicted and actual values, used to assess prediction accuracy}}
+\newglossaryentry{rmse}{name=RMSE, description={Root Mean Squared Error, the square root of the mean squared error, providing a measure of prediction error in the same units as the target}}
+\newglossaryentry{r2}{name=R2, description={Coefficient of Determination, a metric indicating how well a model explains the variability of the target variable, ranging from 0 to 1}}
+
+\title{Machine Learning Techniques for Li-ion Battery State-of-Health and Remaining Useful Life Estimation}
+\author{Gabriel Buzzi Sanches \\
+\small Universidade Estadual de Campinas \\
+\small \texttt{gabrielbuzzi2@gmail.com}}
+\date{\today}
+
+\maketitle
+
+\begin{abstract}
+    Your abstract goes here.
+\end{abstract}
+
+\input{content/introduction}
+\input{content/dataset}
+\input{content/soh_and_rul}
+\input{content/data_analysis}
+\input{content/feature_extraction}
+\input{content/models}
+\input{content/optimization}
+\input{content/results}
+\input{content/discussion}
+
+\bibliography{references}
+
+\end{document}
