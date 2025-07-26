@@ -1,28 +1,42 @@
-# severson_features_soh_rul
-For installing the ipykernel run the following 
-´´´
-python -m ipykernel install --user --name pixi-severson_features_soh_rul --display-name "Pixi (severson_features_soh_rul)"
-´´´
+# Machine Learning Techniques for Li-ion Battery State-of-Health and Remaining Useful Life Estimation
 
-<a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
-    <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
-</a>
+Utilizing features of cycling data from Severson et. al. fast-charging battery dataset.
 
-Utilizing features of cycling data from Severson et. al. fast-chargg battery dataset.
+## Run the code
+First you should install [Pixi](https://pixi.sh/latest/) on your machine.
+
+For Linux & macOS run the following:
+```
+curl -fsSL https://pixi.sh/install.sh | sh
+```
+
+Once you have Pixi installed navigate to the project root folder and run `pixi install` to setup the environment.
+
+Set the .mat files paths at `src/conf/config.yaml`.
+
+On your terminal, at the root project path run the following:
+```
+pixi shell
+python src/data/load_data.py
+```
+this will convert data from the `.mat` files into a `.h5` dataset inside `data/external` folder.
+
+Once the loading is done, run the following to process the raw batteries' signals:
+```
+python src/data/build_data.py
+```
+this should save a `.csv` file for each cell at `data/processed/cells` folder.
 
 ## Project Organization
 
 ```
 ├── LICENSE            <- Open-source license if one is chosen
-├── Makefile           <- Makefile with convenience commands like `make data` or `make train`
 ├── README.md          <- The top-level README for developers using this project.
 ├── data
 │   ├── external       <- Data from third party sources.
 │   ├── interim        <- Intermediate data that has been transformed.
 │   ├── processed      <- The final, canonical data sets for modeling.
 │   └── raw            <- The original, immutable data dump.
-│
-├── docs               <- A default mkdocs project; see www.mkdocs.org for details
 │
 ├── models             <- Trained and serialized models, model predictions, or model summaries
 │
@@ -36,12 +50,8 @@ Utilizing features of cycling data from Severson et. al. fast-chargg battery dat
 ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
 │
 ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
+│   ├── paper          <- Scientific paper associated.
 │   └── figures        <- Generated graphics and figures to be used in reporting
-│
-├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-│                         generated with `pip freeze > requirements.txt`
-│
-├── setup.cfg          <- Configuration file for flake8
 │
 └── src   <- Source code for use in this project.
     │
