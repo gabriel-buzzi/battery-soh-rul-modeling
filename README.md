@@ -15,17 +15,33 @@ Once you have Pixi installed navigate to the project root folder and run `pixi i
 Set the .mat files paths at `src/conf/config.yaml`.
 
 On your terminal, at the root project path run the following:
-```
+```shell
 pixi shell
+```
+make sure all the commands are ran within this shell.
+
+To load the downloaded .mat files from Severson et. al. run the following
+```shell
 python src/data/load_data.py
 ```
 this will convert data from the `.mat` files into a `.h5` dataset inside `data/external` folder.
 
 Once the loading is done, run the following to process the raw batteries' signals:
-```
+```shell
 python src/data/build_data.py
 ```
 this should save a `.csv` file for each cell at `data/processed/cells` folder.
+
+After building the data from all cells you might want to execute the features extraction process by running the following:
+```shell
+python src/data/make_features.py
+```
+This should save at `data/interim` a file named `features.parquet` that contains the statistical features from voltage, current and temperature from each valid cycle of each cell, as well as cycle and cell ids and SOH and RUL values for each cycle.
+
+The next step of the pipeline is preparing data for training and testing the models, for this run the following:
+```shell
+python src/data/prepare_data.py
+```
 
 ## Project Organization
 
