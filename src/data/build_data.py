@@ -29,13 +29,20 @@ def _validate_cycle_data(cfg: DictConfig, cycle_data: h5py.Group) -> bool:
         True if data meets all structural and numerical conditions,
         False otherwise.
     """
-    required_fields = ["t", "V", "I", "Qc", "Qd"]
+    # Updated field names to match new structure
+    required_fields = [
+        "time",
+        "voltage",
+        "current",
+        "charge_capacity",
+        "discharge_capacity",
+    ]
 
     for field in required_fields:
         if field not in cycle_data:
             return False
 
-    data_length = len(cycle_data["t"][:])
+    data_length = len(cycle_data["time"][:])  # Changed from "t" to "time"
     min_len = cfg["data"]["min_cycle_length"]
     max_len = cfg["data"]["max_cycle_length"]
 
@@ -43,8 +50,8 @@ def _validate_cycle_data(cfg: DictConfig, cycle_data: h5py.Group) -> bool:
         return False
 
     max_capacity = max(
-        np.max(cycle_data["Qc"][:]),
-        np.max(cycle_data["Qd"][:]),
+        np.max(cycle_data["charge_capacity"][:]),  # Changed from "Qc"
+        np.max(cycle_data["discharge_capacity"][:]),  # Changed from "Qd"
     )
     rated = cfg["data"]["cells_rated_capacity"]
     margin = cfg["data"]["margin_for_upper_capacity_bound"]
@@ -113,8 +120,10 @@ def _process_cells_data(cfg: DictConfig, cells_data: h5py.File) -> None:
     cells_data : h5py.File
         Opened HDF5 file with battery cell data.
     """
-    for cell_id in tqdm(cells_data.keys(), desc="Processing cells"):
-        cell_group = cells_data[cell_id]
+    batteries_group = cells_data["batteries"]
+
+    for cell_id in tqdm(batteries_group.keys(), desc="Processing cells"):
+        cell_group = batteries_group[cell_id]
 
         try:
             charge_policy = cell_group.attrs["charge_policy"]
@@ -127,8 +136,15 @@ def _process_cells_data(cfg: DictConfig, cells_data: h5py.File) -> None:
         cell_frames = []
 
         cycles_group = cell_group["cycles"]
-        for cycle_id in sorted(cycles_group.keys(), key=int):
-            cycle_data = cycles_group[cycle_id]
+        cycle_names = [name for name in cycles_group.keys()]
+        cycle_numbers = [int(name.split("_")[1]) for name in cycle_names]
+        sorted_cycle_names = [
+            name for _, name in sorted(zip(cycle_numbers, cycle_names))
+        ]
+
+        for cycle_name in sorted_cycle_names:
+            cycle_data = cycles_group[cycle_name]
+            cycle_id = int(cycle_name.split("_")[1])  # Extract cycle number
 
             if not _validate_cycle_data(cfg, cycle_data):
                 logger.warning(
@@ -136,14 +152,16 @@ def _process_cells_data(cfg: DictConfig, cells_data: h5py.File) -> None:
                 )
                 continue
 
-            time = cycle_data["t"][:] * 60  # convert to seconds
-            voltage = cycle_data["V"][:]
-            current = cycle_data["I"][:]
-            temperature = cycle_data["T"][:]
-            charge_capacity = cycle_data["Qc"][:]
-            discharge_capacity = cycle_data["Qd"][:]
+            # Updated field names to match new structure
+            time = (
+                cycle_data["time"][:] * 60
+            )  # Already in minutes, convert to seconds
+            voltage = cycle_data["voltage"][:]
+            current = cycle_data["current"][:]
+            temperature = cycle_data["temperature"][:]
+            charge_capacity = cycle_data["charge_capacity"][:]
+            discharge_capacity = cycle_data["discharge_capacity"][:]
 
-            # Ensure all signals are sorted by time
             sorted_idx = np.argsort(time)
             time = time[sorted_idx]
             voltage = voltage[sorted_idx]
@@ -153,7 +171,7 @@ def _process_cells_data(cfg: DictConfig, cells_data: h5py.File) -> None:
             discharge_capacity = discharge_capacity[sorted_idx]
 
             cells_rated_capacity = cfg["data"]["cells_rated_capacity"]
-            soh = (discharge_capacity[-1] / cells_rated_capacity) * 100
+            soh = (np.max(discharge_capacity) / cells_rated_capacity) * 100
 
             time_diff = np.diff(time)
             threshold = cfg["data"]["time_jump_threshold"]
@@ -197,7 +215,7 @@ def _process_cells_data(cfg: DictConfig, cells_data: h5py.File) -> None:
             )
 
             cycle_df["cell"] = cell_id
-            cycle_df["cycle"] = int(cycle_id)
+            cycle_df["cycle"] = cycle_id  # Use extracted cycle number
             cycle_df["SOH"] = soh
             cycle_df["charge_policy"] = charge_policy
 
