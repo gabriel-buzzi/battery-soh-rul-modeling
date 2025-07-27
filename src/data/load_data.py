@@ -1,184 +1,284 @@
-"""Module to load and store battery dataset from .mat files into .h5."""
+"""Load and organize data from Severson et. al."""
 
-import gc
 import logging
-from pathlib import Path
+from typing import Any
 
 import h5py
 import hydra
 import numpy as np
-from omegaconf import DictConfig
-from tqdm import tqdm
+from omegaconf import DictConfig  # OmegaConf currently unused
 
 logger = logging.getLogger(__name__)
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config")
-def load_data(cfg: DictConfig) -> None:
-    """Load data from .mat files and resave them into a unique .h5.
-
-    Load .mat files containing battery test data, process it,
-    and save as a structured HDF5 file.
-
-    This function:
-    - Reads paths from the Hydra configuration.
-    - Extracts scalar and timeseries data per cell from the .mat files.
-    - Writes this data into an HDF5 file.
-    - Applies filtering (e.g., removing noisy or incomplete cells).
-    - Merges data from different batches.
+def load_matlab_batch(filename: str, batch_prefix: str) -> dict[str, Any]:
+    """
+    Load a single batch from MATLAB file and extract relevant data.
 
     Parameters
     ----------
-    cfg : DictConfig
-        Hydra configuration containing:
-            - data.external_data_paths : list of str
-                Paths to the raw .mat data files.
-            - data.loaded_data_path : str
-                Destination HDF5 file path for the processed data.
+    filename : str
+        Path to the MATLAB file
+    batch_prefix : str
+        Prefix for battery keys (e.g., 'b1c', 'b2c', 'b3c')
+
+    Returns
+    -------
+    dict
+        Dictionary with battery data
     """
-    mat_files = cfg["data"]["external_data_paths"]
-    output_file = Path(cfg["data"]["loaded_data_path"])
-    output_file.parent.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Loading {filename}...")
 
-    # Initialize empty HDF5 file
-    with h5py.File(output_file, "w"):
-        pass
+    with h5py.File(filename, "r") as f:
+        batch = f["batch"]
+        num_cells = batch["summary"].shape[0]
+        bat_dict = {}
 
-    # Process each batch
-    for batch_idx, mat_filename in enumerate(mat_files, 1):
-        logger.info(f"Loading {batch_idx} of {len(mat_files)}")
+        for i in range(num_cells):
+            # Extract cycle life and charge policy
+            cl = f[batch["cycle_life"][i, 0]][()]
+            policy = (
+                f[batch["policy_readable"][i, 0]][:].tobytes()[::2].decode()
+            )
 
-        with h5py.File(mat_filename, "r") as file_handle:
-            batch = file_handle["batch"]
-            num_cells = batch["summary"].shape[0]
+            # Extract cycles data
+            cycles = f[batch["cycles"][i, 0]]
+            cycle_dict = {}
 
-            for i in tqdm(range(num_cells), desc="Cell"):
-                try:
-                    cycle_life = file_handle[batch["cycle_life"][i, 0]][()]
-                    policy = (
-                        file_handle[batch["policy_readable"][i, 0]][:]
-                        .tobytes()[::2]
-                        .decode()
+            for j in range(cycles["I"].shape[0]):
+                # Extract only the required variables
+                I = np.hstack(f[cycles["I"][j, 0]][()])  # noqa: E741 # Current
+                Qc = np.hstack(f[cycles["Qc"][j, 0]][()])  # Charge capacity
+                Qd = np.hstack(f[cycles["Qd"][j, 0]][()])  # Discharge capacity
+                T = np.hstack(f[cycles["T"][j, 0]][()])  # Temperature
+                V = np.hstack(f[cycles["V"][j, 0]][()])  # Voltage
+                t = np.hstack(f[cycles["t"][j, 0]][()])  # Time
+
+                cycle_data = {
+                    "time": t,
+                    "voltage": V,
+                    "current": I,
+                    "temperature": T,
+                    "charge_capacity": Qc,
+                    "discharge_capacity": Qd,
+                }
+                cycle_dict[j] = (
+                    cycle_data  # Use integer keys for proper ordering
+                )
+
+            cell_dict = {
+                "cycle_life": cl,
+                "charge_policy": policy,
+                "cycles": cycle_dict,
+            }
+
+            key = batch_prefix + str(i)
+            bat_dict[key] = cell_dict
+
+    return bat_dict
+
+
+def apply_batch_filters(batch1: dict, batch2: dict, batch3: dict) -> tuple:
+    """
+    Apply the same filtering logic as in the original code.
+
+    Returns
+    -------
+    tuple
+        Filtered batch dictionaries
+    """
+    logger.info("Applying filters...")
+
+    # Remove batteries from batch1 that do not reach 80% capacity
+    batch1_remove = ["b1c8", "b1c10", "b1c12", "b1c13", "b1c22"]
+    for key in batch1_remove:
+        if key in batch1:
+            del batch1[key]
+
+    # Remove noisy channels from batch3
+    batch3_remove = ["b3c37", "b3c2", "b3c23", "b3c32", "b3c42", "b3c43"]
+    for key in batch3_remove:
+        if key in batch3:
+            del batch3[key]
+
+    return batch1, batch2, batch3
+
+
+def merge_batch_continuation_data(batch1: dict, batch2: dict) -> dict:
+    """Merge continuation data from batch2 into batch1 cells.
+
+    This handles the special case where some batch1 cells continued in batch2.
+    """
+    logger.info("Merging batch continuation data...")
+
+    # Mapping of batch2 keys to batch1 keys and additional cycle lengths
+    batch2_keys = ["b2c7", "b2c8", "b2c9", "b2c15", "b2c16"]
+    batch1_keys = ["b1c0", "b1c1", "b1c2", "b1c3", "b1c4"]
+    add_len = [662, 981, 1060, 208, 482]
+
+    for i, (b1_key, b2_key) in enumerate(zip(batch1_keys, batch2_keys)):
+        if b1_key in batch1 and b2_key in batch2:
+            # Update cycle life
+            batch1[b1_key]["cycle_life"] = (
+                batch1[b1_key]["cycle_life"] + add_len[i]
+            )
+
+            # Get the last cycle number from batch1
+            last_cycle = max(batch1[b1_key]["cycles"].keys()) + 1
+
+            # Merge cycles from batch2, maintaining proper order
+            for j, cycle_data in batch2[b2_key]["cycles"].items():
+                batch1[b1_key]["cycles"][last_cycle + j] = cycle_data
+
+    # Remove the merged cells from batch2
+    for key in batch2_keys:
+        if key in batch2:
+            del batch2[key]
+
+    return batch1, batch2
+
+
+def save_to_hdf5(all_batteries: dict, output_filename: str):
+    """Save all battery data to a single HDF5 file.
+
+    Parameters
+    ----------
+    all_batteries : dict
+        Combined dictionary of all battery data
+    output_filename : str
+        Output HDF5 filename
+    """
+    logger.info(f"Saving data to {output_filename}...")
+
+    with h5py.File(output_filename, "w") as f:
+        # Create main batteries group
+        batteries_group = f.create_group("batteries")
+
+        for battery_id, battery_data in all_batteries.items():
+            # Create group for each battery
+            battery_group = batteries_group.create_group(battery_id)
+
+            # Save battery metadata
+            battery_group.attrs["cycle_life"] = battery_data["cycle_life"]
+            battery_group.attrs["charge_policy"] = battery_data[
+                "charge_policy"
+            ]
+
+            # Create cycles group
+            cycles_group = battery_group.create_group("cycles")
+
+            # Save each cycle
+            for cycle_num, cycle_data in battery_data["cycles"].items():
+                cycle_group = cycles_group.create_group(
+                    f"cycle_{cycle_num:04d}"
+                )
+
+                # Save cycle data
+                for var_name, var_data in cycle_data.items():
+                    cycle_group.create_dataset(
+                        var_name, data=var_data, compression="gzip"
                     )
-                except KeyError as e:
-                    print(
-                        f"KeyError: {e} in file {mat_filename}, cell {i}."
-                        "Skipping."
-                    )
-                    continue
 
-                with h5py.File(output_file, "a") as out_f:
-                    cell_key = f"b{batch_idx}c{i}"
-                    cell_group = out_f.create_group(cell_key)
-                    cell_group.attrs["cycle_life"] = cycle_life
-                    cell_group.attrs["charge_policy"] = policy
+        # Save dataset metadata
+        f.attrs["description"] = "Battery dataset with cycles data"
+        f.attrs["variables"] = [
+            "time",
+            "voltage",
+            "current",
+            "temperature",
+            "charge_capacity",
+            "discharge_capacity",
+        ]
+        f.attrs["total_batteries"] = len(all_batteries)
 
-                    cycles = file_handle[batch["cycles"][i, 0]]
-                    cycles_group = cell_group.create_group("cycles")
 
-                    for j in range(cycles["I"].shape[0]):
-                        try:
-                            time = np.hstack(
-                                file_handle[cycles["t"][j, 0]][()],
-                            ).astype(np.float32)
-                            voltage = np.hstack(
-                                file_handle[cycles["V"][j, 0]][()]
-                            ).astype(np.float32)
-                            current = np.hstack(
-                                file_handle[cycles["I"][j, 0]][()]
-                            ).astype(np.float32)
-                            temperature = np.hstack(
-                                file_handle[cycles["T"][j, 0]][()]
-                            ).astype(np.float32)
-                            charge_capacity = np.hstack(
-                                file_handle[cycles["Qc"][j, 0]][()]
-                            ).astype(np.float32)
-                            discharge_capacity = np.hstack(
-                                file_handle[cycles["Qd"][j, 0]][()]
-                            ).astype(np.float32)
+def load_from_hdf5(filename: str) -> dict:
+    """
+    Load battery data from HDF5 file (utility function for verification).
 
-                            cycle_group = cycles_group.create_group(str(j))
-                            cycle_group.create_dataset(
-                                "t",
-                                data=time,
-                                compression="gzip",
-                                compression_opts=4,
-                            )
-                            cycle_group.create_dataset(
-                                "V",
-                                data=voltage,
-                                compression="gzip",
-                                compression_opts=4,
-                            )
-                            cycle_group.create_dataset(
-                                "I",
-                                data=current,
-                                compression="gzip",
-                                compression_opts=4,
-                            )
-                            cycle_group.create_dataset(
-                                "T",
-                                data=temperature,
-                                compression="gzip",
-                                compression_opts=4,
-                            )
-                            cycle_group.create_dataset(
-                                "Qc",
-                                data=charge_capacity,
-                                compression="gzip",
-                                compression_opts=4,
-                            )
-                            cycle_group.create_dataset(
-                                "Qd",
-                                data=discharge_capacity,
-                                compression="gzip",
-                                compression_opts=4,
-                            )
-                        except KeyError as e:
-                            print(
-                                f"KeyError: {e} in file {mat_filename},"
-                                "cell {i}, cycle {j}. Skipping cycle."
-                            )
-                            continue
+    Parameters
+    ----------
+    filename : str
+        HDF5 filename to load
 
-                gc.collect()
+    Returns
+    -------
+    dict
+        Dictionary with battery data
+    """
+    batteries = {}
 
-    # Post-process the HDF5 file
-    with h5py.File(output_file, "a") as out_file_handle:
-        # Remove underperforming cells in batch 1
-        for key in ["b1c8", "b1c10", "b1c12", "b1c13", "b1c22"]:
-            if key in out_file_handle:
-                del out_file_handle[key]
+    with h5py.File(filename, "r") as f:
+        batteries_group = f["batteries"]
 
-        # Merge batch 2 into batch 1
-        batch2_keys = ["b2c7", "b2c8", "b2c9", "b2c15", "b2c16"]
-        batch1_keys = ["b1c0", "b1c1", "b1c2", "b1c3", "b1c4"]
-        additional_cycles = [662, 981, 1060, 208, 482]
+        for battery_id in batteries_group.keys():
+            battery_group = batteries_group[battery_id]
 
-        for i, (b1k, b2k) in enumerate(zip(batch1_keys, batch2_keys)):
-            if b1k in out_file_handle and b2k in out_file_handle:
-                out_file_handle[b1k].attrs["cycle_life"] += additional_cycles[
-                    i
-                ]
-                last_cycle = len(out_file_handle[b1k]["cycles"])
+            # Load metadata
+            cycle_life = battery_group.attrs["cycle_life"]
+            charge_policy = battery_group.attrs["charge_policy"]
 
-                for j, cycle_key in enumerate(
-                    out_file_handle[b2k]["cycles"].keys()
-                ):
-                    out_file_handle.move(
-                        f"{b2k}/cycles/{cycle_key}",
-                        f"{b1k}/cycles/{last_cycle + j}",
-                    )
+            # Load cycles
+            cycles = {}
+            cycles_group = battery_group["cycles"]
 
-                del out_file_handle[b2k]
+            for cycle_name in cycles_group.keys():
+                cycle_num = int(cycle_name.split("_")[1])
+                cycle_group = cycles_group[cycle_name]
 
-        # Remove noisy batch 3 cells
-        for key in ["b3c37", "b3c2", "b3c23", "b3c32", "b3c42", "b3c43"]:
-            if key in out_file_handle:
-                del out_file_handle[key]
+                cycle_data = {}
+                for var_name in cycle_group.keys():
+                    cycle_data[var_name] = cycle_group[var_name][:]
 
-    print(f"Successfully saved processed data to {output_file}")
-    gc.collect()
+                cycles[cycle_num] = cycle_data
+
+            batteries[battery_id] = {
+                "cycle_life": cycle_life,
+                "charge_policy": charge_policy,
+                "cycles": cycles,
+            }
+
+    return batteries
+
+
+@hydra.main(version_base=None, config_path="../conf", config_name="config")
+def load_data(cfg: DictConfig) -> None:
+    """Load batches MATLAB files provided and build a HDF5 databased.
+
+    This function should load the MATLAB of three batches and reproduce the
+    reorganization from Severson et. al.. The organized data is saved as a
+    HDF5 dataset.
+    """
+    # File paths (update these to match your file locations)
+    batch1_file = cfg["data"]["external_data_paths"][0]
+    batch2_file = cfg["data"]["external_data_paths"][1]
+    batch3_file = cfg["data"]["external_data_paths"][2]
+    output_file = cfg["data"]["loaded_data_path"]
+
+    # Load all batches
+    batch1 = load_matlab_batch(batch1_file, "b1c")
+    batch2 = load_matlab_batch(batch2_file, "b2c")
+    batch3 = load_matlab_batch(batch3_file, "b3c")
+
+    # Remove faulty cells
+    batch1, batch2, batch3 = apply_batch_filters(batch1, batch2, batch3)
+
+    # Merge continuation data
+    batch1, batch2 = merge_batch_continuation_data(batch1, batch2)
+
+    # Combine all batches
+    all_batteries = {**batch1, **batch2, **batch3}
+
+    # Save to HDF5
+    save_to_hdf5(all_batteries, output_file)
+
+    # Print summary statistics
+    logger.info("\nProcessing complete!")
+    logger.info(f"Total batteries: {len(all_batteries)}")
+    logger.info(f"Batch 1: {len(batch1)} batteries")
+    logger.info(f"Batch 2: {len(batch2)} batteries")
+    logger.info(f"Batch 3: {len(batch3)} batteries")
+    logger.info(f"Data saved to: {output_file}")
 
 
 if __name__ == "__main__":
