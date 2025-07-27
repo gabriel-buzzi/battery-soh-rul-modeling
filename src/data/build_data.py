@@ -76,7 +76,6 @@ def _fix_time_axis(
     np.ndarray
         Corrected time vector, or None if monotonicity cannot be restored.
     """
-    logger.warning("Detected %d time jump(s) in cycle data", len(jump_indices))
     corrected_time = time.copy()
     cumulative_shift = 0.0
 
@@ -128,7 +127,7 @@ def _process_cells_data(cfg: DictConfig, cells_data: h5py.File) -> None:
         cell_frames = []
 
         cycles_group = cell_group["cycles"]
-        for cycle_id in cycles_group.keys():
+        for cycle_id in sorted(cycles_group.keys(), key=int):
             cycle_data = cycles_group[cycle_id]
 
             if not _validate_cycle_data(cfg, cycle_data):
@@ -144,14 +143,27 @@ def _process_cells_data(cfg: DictConfig, cells_data: h5py.File) -> None:
             charge_capacity = cycle_data["Qc"][:]
             discharge_capacity = cycle_data["Qd"][:]
 
+            # Ensure all signals are sorted by time
+            sorted_idx = np.argsort(time)
+            time = time[sorted_idx]
+            voltage = voltage[sorted_idx]
+            current = current[sorted_idx]
+            temperature = temperature[sorted_idx]
+            charge_capacity = charge_capacity[sorted_idx]
+            discharge_capacity = discharge_capacity[sorted_idx]
+
             cells_rated_capacity = cfg["data"]["cells_rated_capacity"]
-            soh = (max(discharge_capacity) / cells_rated_capacity) * 100
+            soh = (discharge_capacity[-1] / cells_rated_capacity) * 100
 
             time_diff = np.diff(time)
             threshold = cfg["data"]["time_jump_threshold"]
             jump_indices = np.where(time_diff > threshold)[0]
 
             if len(jump_indices) > 0:
+                logger.warning(
+                    f"Detected {len(jump_indices)} time jump(s) in"
+                    f"cycle {cycle_id} of cell {cell_id}."
+                )
                 time = _fix_time_axis(time, jump_indices, time_diff)
 
             if time is None:
