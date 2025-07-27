@@ -1,3 +1,5 @@
+random_seed: 42
+
 data:
   external_data_paths: # Paths to the .mat files provided by Severson et. al.
     - /home/gabriel/data/severson/raw/2017-05-12_batchdata_updated_struct_errorcorrect.mat 
@@ -11,7 +13,14 @@ data:
   time_jump_threshold: 400 # sec
   target_frequency: 1 # Hz
   processed_cells_data_folder: ./data/processed/cells
-  
+  eol_definition: 80 # SoH
+  features_data_path: ./data/interim/features.parquet
+  train_cells_proportion: 0.8
+  features_process_window_size: 10
+  features_process_savgol_order: 1
+  train_data_path: ./data/interim/train_df.parquet
+  test_data_path: ./data/interim/test_df.parquet
+
 analysis:
   figures_folder: ./reports/figures
-  example_cell: b2c32
+  example_cell: b1c14
