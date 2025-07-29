@@ -21,6 +21,18 @@ data:
   train_data_path: ./data/interim/train_df.parquet
   test_data_path: ./data/interim/test_df.parquet
 
+modeling:
+  target: SOH
+  num_features: 4
+  n_jobs: 4
+  feature_importances_dir: ./models/feature_importances/
+  max_trials: 100
+  optimization_results_dir: ./models/optimization/
+
 analysis:
   figures_folder: ./reports/figures
   example_cell: b1c14
+
+defaults:
+  - _self_
+  - model: elastic_net
