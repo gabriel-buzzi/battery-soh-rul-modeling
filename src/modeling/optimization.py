@@ -152,7 +152,7 @@ def compute_features_importances(cfg: DictConfig) -> None:
     model_partial = cfg["model"]
     model_name = model_partial["_target_"].split(".")[-1]
 
-    logger.info(f"Starting optimization of {model_name} instance.")
+    logger.info(f"Starting optimization of {model_name} for {target}.")
 
     trial_scores = []
 
@@ -207,8 +207,9 @@ def compute_features_importances(cfg: DictConfig) -> None:
     best_model = instantiate(model_partial, **best_params)
     final_model = make_pipeline(StandardScaler(), best_model())
     final_model.fit(X_train, y_train)
-    joblib.dump(final_model, optimization_results_dir / "best_model.pkl")
-    logger.info("Saved best model to best_elasticnet_model.pkl")
+    optimized_model_path = optimization_results_dir / "best_model.joblib"
+    joblib.dump(final_model, optimized_model_path)
+    logger.info("Saved best model to ")
 
 
 if __name__ == "__main__":
