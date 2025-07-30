@@ -28,6 +28,7 @@ modeling:
   feature_importances_dir: ./models/feature_importances/
   max_trials: 100
   optimization_results_dir: ./models/optimization/
+  evaluation_results_dir: ./models/evaluation/
 
 analysis:
   figures_folder: ./reports/figures
