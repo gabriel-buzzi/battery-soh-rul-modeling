@@ -6,43 +6,12 @@ from pathlib import Path
 
 import hydra
 import joblib
-import numpy as np
 from omegaconf import DictConfig
 import pandas as pd
-from sklearn.metrics import (
-    mean_absolute_error,
-    r2_score,
-    root_mean_squared_error,
-)
+
+from src.modeling.utils import regression_metrics
 
 logger = logging.getLogger(__name__)
-
-
-def _regression_metrics(
-    y_true: np.ndarray, y_pred: np.ndarray
-) -> dict[str, float]:
-    """Compute regression metrics: MAE, RMSE, R (Pearson), and R².
-
-    Parameters
-    ----------
-    y_true : np.ndarrat
-        Ground truth values.
-    y_pred : array-like
-        Predicted values.
-
-    Returns
-    -------
-    dict
-        Dictionary with keys 'mae', 'rmse', 'r', 'r2'
-    """
-    mae = mean_absolute_error(y_true, y_pred)
-    rmse = root_mean_squared_error(y_true, y_pred)
-    r2 = r2_score(y_true, y_pred)
-
-    # Pearson correlation coefficient
-    r = np.corrcoef(y_true, y_pred)[0][1]
-
-    return {"mae": mae, "rmse": rmse, "r": r, "r2": r2}
 
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
@@ -123,7 +92,7 @@ def evaluate_performance(cfg: DictConfig) -> None:
 
     logger.info(f"Predictions saved to {predictions_path}.")
 
-    overall_metrics = _regression_metrics(y_test, y_pred)
+    overall_metrics = regression_metrics(y_test, y_pred)
 
     overall_metrics_path = evaluation_results_dir / "overall_metrics.json"
     with open(overall_metrics_path, "w") as f:
