@@ -9,7 +9,7 @@ def mm_to_inches(mm):
 
 
 def get_elsevier_single_column_fig(height_mm=85):
-    """Return a single-column Elsevier matplotlib figure.
+    """Return a 90mm width single-column Elsevier figure.
 
     Return a matplotlib figure and axis sized for
     a single-column Elsevier figure.
@@ -23,7 +23,31 @@ def get_elsevier_single_column_fig(height_mm=85):
     -------
         fig, ax
     """
-    width_mm = 85  # Single-column width
+    width_mm = 90  # Single-column width
+    fig, ax = plt.subplots(
+        figsize=(mm_to_inches(width_mm), mm_to_inches(height_mm)),
+        constrained_layout=True,
+    )
+    ax.tick_params(axis="both", pad=4)
+    return fig, ax
+
+
+def get_elsevier_one_and_half_column_fig(height_mm=85):
+    """Return a 140mm width one-and-a-half-column Elsevier figure.
+
+    Return a matplotlib figure and axis sized for
+    a one-and-a-half-column Elsevier figure.
+
+    Parameters
+    ----------
+    height_mm : float
+        Height of the figure in millimeters (default: 85 mm)
+
+    Returns
+    -------
+        fig, ax
+    """
+    width_mm = 140  # One-and-a-half-column width
     fig, ax = plt.subplots(
         figsize=(mm_to_inches(width_mm), mm_to_inches(height_mm)),
         constrained_layout=True,
@@ -33,7 +57,7 @@ def get_elsevier_single_column_fig(height_mm=85):
 
 
 def get_elsevier_double_column_fig(height_mm=85):
-    """Return a double-column Elsevier matplotlib figure.
+    """Return a 190mm width double-column Elsevier figure.
 
     Return a matplotlib figure and axis sized for
     a double-column Elsevier figure.
@@ -47,7 +71,7 @@ def get_elsevier_double_column_fig(height_mm=85):
     -------
         fig, ax
     """
-    width_mm = 170  # Double-column width
+    width_mm = 190  # Double-column width
     fig, ax = plt.subplots(
         figsize=(mm_to_inches(width_mm), mm_to_inches(height_mm)),
         constrained_layout=True,
@@ -78,11 +102,15 @@ def get_elsevier_figure_with_subplots(
         fig, axes
     """
     if column == "single":
-        total_width_mm = 85
+        total_width_mm = 90
+    elif column == "one-and-a-half":
+        total_width_mm = 140
     elif column == "double":
-        total_width_mm = 170
+        total_width_mm = 190
     else:
-        raise ValueError("column must be 'single' or 'double'")
+        raise ValueError(
+            "column must be 'single', 'one-and-a-half, or'double'"
+        )
 
     total_width_in = mm_to_inches(total_width_mm)
 
