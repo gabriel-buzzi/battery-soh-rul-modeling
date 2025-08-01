@@ -29,10 +29,14 @@ def evaluate_performance(cfg: DictConfig) -> None:
 
     target = cfg["modeling"]["target"]
 
+    num_features = cfg["modeling"]["num_features"]
+
     optimization_results_dir = Path(
         cfg["modeling"]["optimization_results_dir"]
     ).absolute()
-    optimization_results_dir /= f"{model_name}_{target}_optimization"
+    optimization_results_dir /= (
+        f"{num_features}_features_{model_name}_{target}_optimization"
+    )
     optimized_model_path = optimization_results_dir / "best_model.joblib"
 
     if not optimized_model_path.exists():
@@ -64,12 +68,11 @@ def evaluate_performance(cfg: DictConfig) -> None:
         feature_importances, key=feature_importances.get, reverse=True
     )
 
-    selected_features = features_sorted_by_importance[
-        : cfg["modeling"]["num_features"]
-    ]
+    selected_features = features_sorted_by_importance[:num_features]
 
     X_test = test_df[selected_features]
     y_test = test_df[target]
+    cycles = test_df["cycle"]
     cells = test_df["cell"]
 
     logger.info(f"Starting evaluation of {model_name} for {target}.")
@@ -79,11 +82,13 @@ def evaluate_performance(cfg: DictConfig) -> None:
     evaluation_results_dir = Path(
         cfg["modeling"]["evaluation_results_dir"]
     ).absolute()
-    evaluation_results_dir /= f"{model_name}_{target}_evaluation"
+    evaluation_results_dir /= (
+        f"{num_features}_features_{model_name}_{target}_evaluation"
+    )
     evaluation_results_dir.mkdir(parents=True, exist_ok=True)
 
     predictions = pd.DataFrame(
-        {"cell": cells, "y_true": y_test, "y_pred": y_pred}
+        {"cell": cells, "cycles": cycles, "y_true": y_test, "y_pred": y_pred}
     )
 
     predictions_path = evaluation_results_dir / "predictions.csv"
