@@ -22,11 +22,11 @@ data:
   test_data_path: ./data/interim/test_df.parquet
 
 modeling:
-  target: RUL
-  num_features: 4
+  target: SOH
+  num_features: 8
   n_jobs: 2 # Available core for models training
   feature_importances_dir: ./models/feature_importances/
-  max_trials: 100
+  max_trials: 5000
   early_stopping_patience: 10
   optimization_results_dir: ./models/optimization/
   evaluation_results_dir: ./models/evaluation/
@@ -37,7 +37,7 @@ analysis:
 
 defaults:
   - _self_
-  - model: elastic_net
+  - model: mlp
   - override hydra/launcher: joblib
   
 hydra:

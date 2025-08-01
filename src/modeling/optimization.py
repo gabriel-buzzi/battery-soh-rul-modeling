@@ -9,6 +9,7 @@ import hydra
 from hydra.utils import instantiate
 import joblib
 from joblib import Parallel, delayed
+from matplotlib import pyplot as plt
 import numpy as np
 from omegaconf import DictConfig
 import optuna
@@ -81,34 +82,110 @@ def _get_model_params(
             "booster": "gbtree",
             "tree_method": "hist",
         }
+    elif model_name == "MLPRegressor":
+        # Suggest number of layers: 1 to 3 layers
+        n_layers = trial.suggest_int("n_layers", 1, 3)
+
+        # For each layer, suggest number of neurons from a small discrete set
+        # Use a tuple as hidden_layer_sizes for MLPRegressor
+        hidden_layer_sizes = tuple(
+            trial.suggest_categorical(f"n_units_l{i + 1}", [16, 32, 64, 128])
+            for i in range(n_layers)
+        )
+
+        return {
+            "hidden_layer_sizes": hidden_layer_sizes,
+            "activation": trial.suggest_categorical(
+                "activation", ["relu", "tanh"]
+            ),
+            "solver": trial.suggest_categorical("solver", ["adam", "lbfgs"]),
+            "alpha": trial.suggest_float("alpha", 1e-5, 1e-2, log=True),
+            "learning_rate_init": trial.suggest_float(
+                "learning_rate_init", 1e-4, 1e-2, log=True
+            ),
+            "max_iter": 5000,
+            "early_stopping": True,
+            "random_state": 42,
+        }
     else:
         return None
 
 
-class EarlyStoppingCallback:
-    """Early stopping callback for hyperparam optimization."""
+# class EarlyStoppingCallback:
+#     """Early stopping callback for hyperparam optimization."""
 
-    def __init__(self, patience: int):
+#     def __init__(self, patience: int):
+#         self.patience = patience
+#         self._best_value = float("inf")
+#         self._no_improvement_count = 0
+
+#     def __call__(self, study: optuna.Study, trial: optuna.trial.FrozenTrial):
+#         """Class caller to evalute improvement."""
+#         if (
+#             study.best_value < self._best_value - 1e-8
+#         ):  # significant improvement
+#             self._best_value = study.best_value
+#             self._no_improvement_count = 0
+#         else:
+#             self._no_improvement_count += 1
+
+#         if self._no_improvement_count >= self.patience:
+#             print(
+#                 f"Early stopping triggered after {self.patience} "
+#                 "trials with no improvement."
+#             )
+#             study.stop()
+
+
+class MultiObjectiveEarlyStopping:
+    """Multi-objective early stopping callback for hyperparam optimization.
+
+    It tracks the Pareto front (list of study.best_trials).
+    If the current Pareto front is unchanged for patience trials, it stops.
+    """
+
+    def __init__(self, patience: int = 10):
         self.patience = patience
-        self._best_value = float("inf")
+        self._best_trials = []
         self._no_improvement_count = 0
 
     def __call__(self, study: optuna.Study, trial: optuna.trial.FrozenTrial):
         """Class caller to evalute improvement."""
-        if (
-            study.best_value < self._best_value - 1e-8
-        ):  # significant improvement
-            self._best_value = study.best_value
+        # Keep only non-dominated (Pareto optimal) trials
+        current_pareto_trials = study.best_trials
+
+        # Check if Pareto front improved
+        if not self._is_same_front(current_pareto_trials):
+            self._best_trials = current_pareto_trials
             self._no_improvement_count = 0
         else:
             self._no_improvement_count += 1
 
+        # Trigger early stopping if no improvement
         if self._no_improvement_count >= self.patience:
             print(
-                f"Early stopping triggered after {self.patience} "
-                "trials with no improvement."
+                "Early stopping triggered (no Pareto improvement"
+                f"in {self.patience} trials)."
             )
             study.stop()
+
+    def _is_same_front(self, trials: list[optuna.trial.FrozenTrial]) -> bool:
+        # Compare sets of trial numbers (cheap way to check front equality)
+        old_ids = {t.number for t in self._best_trials}
+        new_ids = {t.number for t in trials}
+        return old_ids == new_ids
+
+
+def _estimate_mlp_params(input_dim, hidden_layers):
+    # input_dim: int
+    # hidden_layers: tuple of int
+    total_params = 0
+    prev_layer = input_dim
+    for units in hidden_layers:
+        total_params += prev_layer * units + units  # weights + bias
+        prev_layer = units
+    total_params += prev_layer * 1 + 1  # last layer to output + bias
+    return total_params
 
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
@@ -165,6 +242,17 @@ def optimize_model(cfg: DictConfig) -> None:
 
     n_jobs = cfg["modeling"]["n_jobs"]
 
+    optimization_results_dir = Path(
+        cfg["modeling"]["optimization_results_dir"]
+    )
+    optimization_results_dir /= (
+        f"{num_features}_features_{model_name}_{target}_optimization"
+    )
+    optimization_results_dir.mkdir(parents=True, exist_ok=True)
+
+    trials_train_rmse = []
+    trials_val_rmse = []
+
     def objective(trial: optuna.Trial):
         model_params = _get_model_params(model_name, trial)
         model = instantiate(model_partial, **model_params)
@@ -179,61 +267,84 @@ def optimize_model(cfg: DictConfig) -> None:
 
             y_val_pred = pipeline_clone.predict(X_val)
             val_rmse = root_mean_squared_error(y_val, y_val_pred)
+            val_r2 = r2_score(y_val, y_val_pred)
 
             y_tr_pred = pipeline_clone.predict(X_tr)
             train_rmse = root_mean_squared_error(y_tr, y_tr_pred)
             train_r2 = r2_score(y_tr, y_tr_pred)
 
-            return val_rmse, train_rmse, train_r2
+            return val_rmse, val_r2, train_rmse, train_r2
 
         scores = Parallel(n_jobs=n_jobs)(
             delayed(fit_and_score)(train_idx, val_idx)
             for train_idx, val_idx in gkf.split(X_train, y_train, groups=cells)
         )
 
-        val_rmse_list, train_rmse_list, train_r2_list = zip(*scores)
+        val_rmse_list, val_r2_list, train_rmse_list, train_r2_list = zip(
+            *scores
+        )
 
         val_rmse = np.mean(val_rmse_list)
+        val_r2 = np.mean(val_r2_list)
         train_rmse = np.mean(train_rmse_list)
         train_r2 = np.mean(train_r2_list)
+
+        if model_name == "MLPRegressor":
+            n_params = {
+                "n_model_params": _estimate_mlp_params(
+                    num_features, model_params["hidden_layer_sizes"]
+                )
+            }
+        else:
+            n_params = {}
 
         trial_scores.append(
             {
                 "trial": trial.number,
                 "val_rmse": val_rmse,
+                "val_r2": val_r2,
                 "train_rmse": train_rmse,
                 "train_r2": train_r2,
                 **trial.params,
+                **n_params,
             }
         )
 
-        return val_rmse
+        trials_train_rmse.append(train_rmse)
+        trials_val_rmse.append(val_rmse)
+
+        plt.plot(trials_train_rmse, label="Train RMSE")
+        plt.plot(trials_val_rmse, label="Validation RMSE")
+        plt.xlabel("Training Size")
+        plt.ylabel("RMSE")
+        plt.title("Learning Curve")
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(optimization_results_dir / "optimization_losses.png")
+        plt.clf()
+
+        return (
+            val_rmse,
+            abs(train_rmse - val_rmse),
+        )
 
     study = optuna.create_study(
-        direction=["minimize", "minimize"],
+        directions=["minimize", "minimize"],
         sampler=optuna.samplers.TPESampler(seed=cfg["random_seed"]),
     )
 
-    early_stopping_cb = EarlyStoppingCallback(
+    early_stopping_cb = MultiObjectiveEarlyStopping(
         patience=cfg["modeling"]["early_stopping_patience"]
     )
 
     study.optimize(
         objective,
         n_trials=cfg["modeling"]["max_trials"],
-        timeout=300,
         callbacks=[early_stopping_cb],
     )
 
     # Save trial results
     df_scores = pd.DataFrame(trial_scores)
-    optimization_results_dir = Path(
-        cfg["modeling"]["optimization_results_dir"]
-    )
-    optimization_results_dir /= (
-        f"{num_features}_features_{model_name}_{target}_optimization"
-    )
-    optimization_results_dir.mkdir(parents=True, exist_ok=True)
 
     optimization_history_path = optimization_results_dir / "history.csv"
     df_scores.to_csv(optimization_history_path, index=False)
@@ -241,7 +352,11 @@ def optimize_model(cfg: DictConfig) -> None:
 
     # Train final model with best params
     logger.info("Retriaining best model")
-    best_params = study.best_trial.params
+    # Best trial balancing val_rmse and less overfitting
+    best_trial = min(
+        study.best_trials, key=lambda t: t.values[0] + t.values[1]
+    )
+    best_params = best_trial.params
     best_model = instantiate(model_partial, **best_params)
     final_model = make_pipeline(StandardScaler(), best_model())
     final_model.fit(X_train, y_train)
