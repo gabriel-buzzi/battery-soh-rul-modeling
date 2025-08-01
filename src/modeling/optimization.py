@@ -1,4 +1,4 @@
-"""Feature importances using random forest regressor."""
+"""Perform hyperparam optimization and model training on train data."""
 
 import json
 import logging
@@ -8,10 +8,14 @@ from typing import Any
 import hydra
 from hydra.utils import instantiate
 import joblib
+from joblib import Parallel, delayed
+import numpy as np
 from omegaconf import DictConfig
 import optuna
 import pandas as pd
-from sklearn.model_selection import GroupKFold, cross_val_score
+from sklearn.base import clone
+from sklearn.metrics import r2_score, root_mean_squared_error
+from sklearn.model_selection import GroupKFold
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -30,52 +34,52 @@ def _get_model_params(
         }
     elif model_name == "KNeighborsRegressor":
         return {
-            "n_neighbors": trial.suggest_int("n_neighbors", 1, 30),
+            "n_neighbors": trial.suggest_int("n_neighbors", 10, 40),
             "weights": trial.suggest_categorical(
                 "weights", ["uniform", "distance"]
             ),
-            "p": trial.suggest_int("p", 1, 2),  # 1 = Manhattan, 2 = Euclidean
+            "p": trial.suggest_int("p", 1, 2),
         }
     elif model_name == "ExtraTreesRegressor":
         return {
-            "n_estimators": trial.suggest_int("n_estimators", 100, 1000),
+            "n_estimators": trial.suggest_int("n_estimators", 50, 150),
             "criterion": trial.suggest_categorical(
                 "criterion",
-                ["squared_error", "absolute_error", "friedman_mse"],
+                ["squared_error", "absolute_error"],
             ),
-            "max_depth": trial.suggest_int("max_depth", 2, 40),
-            "min_samples_split": trial.suggest_int("min_samples_split", 2, 20),
-            "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 10),
+            "max_depth": trial.suggest_int("max_depth", 3, 10),
+            "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
+            "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 5),
             "max_features": trial.suggest_categorical(
-                "max_features", ["sqrt", "log2", None]
+                "max_features", ["sqrt", None]
             ),
-            "bootstrap": trial.suggest_categorical("bootstrap", [True, False]),
+            "bootstrap": False,
         }
+
     elif model_name == "XGBRegressor":
         return {
-            "n_estimators": trial.suggest_int("n_estimators", 100, 1000),
-            "max_depth": trial.suggest_int("max_depth", 3, 15),
+            "n_estimators": trial.suggest_int("n_estimators", 50, 150),
+            "max_depth": trial.suggest_int("max_depth", 3, 10),
             "learning_rate": trial.suggest_float(
-                "learning_rate", 1e-3, 0.3, log=True
+                "learning_rate", 0.01, 0.1, log=True
             ),
-            "subsample": trial.suggest_float("subsample", 0.5, 1.0),
+            "subsample": trial.suggest_float("subsample", 0.7, 1.0),
             "colsample_bytree": trial.suggest_float(
-                "colsample_bytree", 0.5, 1.0
+                "colsample_bytree", 0.7, 1.0
             ),
-            "gamma": trial.suggest_float("gamma", 0, 10),
+            "gamma": trial.suggest_float("gamma", 0, 2),
             "reg_alpha": trial.suggest_float(
-                "reg_alpha", 1e-8, 10.0, log=True
-            ),  # L1 reg
+                "reg_alpha",
+                1e-8,
+                1.0,
+                log=True,
+            ),
             "reg_lambda": trial.suggest_float(
-                "reg_lambda", 1e-8, 10.0, log=True
-            ),  # L2 reg
-            "min_child_weight": trial.suggest_int("min_child_weight", 1, 20),
-            "booster": trial.suggest_categorical(
-                "booster", ["gbtree", "dart"]
+                "reg_lambda", 1e-8, 1.0, log=True
             ),
-            "tree_method": trial.suggest_categorical(
-                "tree_method", ["auto", "exact", "hist"]
-            ),
+            "min_child_weight": trial.suggest_int("min_child_weight", 1, 10),
+            "booster": "gbtree",
+            "tree_method": "hist",
         }
     else:
         return None
@@ -108,7 +112,7 @@ class EarlyStoppingCallback:
 
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
-def compute_features_importances(cfg: DictConfig) -> None:
+def optimize_model(cfg: DictConfig) -> None:
     """Compute feature importance for both targets (RUL and SOH)."""
     train_data_path = Path(cfg["data"]["train_data_path"])
     train_df = pd.read_parquet(train_data_path)
@@ -139,13 +143,16 @@ def compute_features_importances(cfg: DictConfig) -> None:
         feature_importances, key=feature_importances.get, reverse=True
     )
 
-    selected_features = features_sorted_by_importance[
-        : cfg["modeling"]["num_features"]
-    ]
+    num_features = cfg["modeling"]["num_features"]
+
+    selected_features = features_sorted_by_importance[:num_features]
 
     X_train = train_df[selected_features]
     y_train = train_df[target]
     cells = train_df["cell"]
+
+    logger.info(f"Train data shape: {X_train.shape}")
+    logger.info(f"Using features: {selected_features}")
 
     gkf = GroupKFold(n_splits=5)
 
@@ -156,37 +163,66 @@ def compute_features_importances(cfg: DictConfig) -> None:
 
     trial_scores = []
 
+    n_jobs = cfg["modeling"]["n_jobs"]
+
     def objective(trial: optuna.Trial):
         model_params = _get_model_params(model_name, trial)
-
-        # Instantiate the model using Hydra
         model = instantiate(model_partial, **model_params)
+        pipeline = make_pipeline(StandardScaler(), model())
 
-        model = make_pipeline(StandardScaler(), model())
+        def fit_and_score(train_idx, val_idx):
+            X_tr, X_val = X_train.iloc[train_idx], X_train.iloc[val_idx]
+            y_tr, y_val = y_train.iloc[train_idx], y_train.iloc[val_idx]
 
-        scores = cross_val_score(
-            model,
-            X_train,
-            y_train,
-            cv=gkf,
-            groups=cells,
-            scoring="neg_root_mean_squared_error",
+            pipeline_clone = clone(pipeline)
+            pipeline_clone.fit(X_tr, y_tr)
+
+            y_val_pred = pipeline_clone.predict(X_val)
+            val_rmse = root_mean_squared_error(y_val, y_val_pred)
+
+            y_tr_pred = pipeline_clone.predict(X_tr)
+            train_rmse = root_mean_squared_error(y_tr, y_tr_pred)
+            train_r2 = r2_score(y_tr, y_tr_pred)
+
+            return val_rmse, train_rmse, train_r2
+
+        scores = Parallel(n_jobs=n_jobs)(
+            delayed(fit_and_score)(train_idx, val_idx)
+            for train_idx, val_idx in gkf.split(X_train, y_train, groups=cells)
         )
-        rmse = -scores.mean()
 
-        # Log trial info
+        val_rmse_list, train_rmse_list, train_r2_list = zip(*scores)
+
+        val_rmse = np.mean(val_rmse_list)
+        train_rmse = np.mean(train_rmse_list)
+        train_r2 = np.mean(train_r2_list)
+
         trial_scores.append(
-            {"trial": trial.number, "rmse": rmse, **trial.params}
+            {
+                "trial": trial.number,
+                "val_rmse": val_rmse,
+                "train_rmse": train_rmse,
+                "train_r2": train_r2,
+                **trial.params,
+            }
         )
 
-        return rmse
+        return val_rmse
 
     study = optuna.create_study(
-        direction="minimize",
+        direction=["minimize", "minimize"],
         sampler=optuna.samplers.TPESampler(seed=cfg["random_seed"]),
     )
+
+    early_stopping_cb = EarlyStoppingCallback(
+        patience=cfg["modeling"]["early_stopping_patience"]
+    )
+
     study.optimize(
-        objective, n_trials=cfg["modeling"]["max_trials"], timeout=300
+        objective,
+        n_trials=cfg["modeling"]["max_trials"],
+        timeout=300,
+        callbacks=[early_stopping_cb],
     )
 
     # Save trial results
@@ -194,7 +230,9 @@ def compute_features_importances(cfg: DictConfig) -> None:
     optimization_results_dir = Path(
         cfg["modeling"]["optimization_results_dir"]
     )
-    optimization_results_dir /= f"{model_name}_{target}_optimization"
+    optimization_results_dir /= (
+        f"{num_features}_features_{model_name}_{target}_optimization"
+    )
     optimization_results_dir.mkdir(parents=True, exist_ok=True)
 
     optimization_history_path = optimization_results_dir / "history.csv"
@@ -213,4 +251,4 @@ def compute_features_importances(cfg: DictConfig) -> None:
 
 
 if __name__ == "__main__":
-    compute_features_importances()
+    optimize_model()
