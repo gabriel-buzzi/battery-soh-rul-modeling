@@ -107,6 +107,45 @@ def _get_model_params(
             "early_stopping": True,
             "random_state": 42,
         }
+    elif model_name == "TweedieRegressor":
+        return {
+            "power": trial.suggest_float(
+                "power",
+                1.3,
+                1.8,
+            ),  # 1=Poisson, 2=Gamma, 1.5~Tweedie
+            "alpha": trial.suggest_float(
+                "alpha",
+                1e-5,
+                1.0,
+                log=True,
+            ),  # L2 regularization
+            "link": "identity",  # link function
+            "fit_intercept": trial.suggest_categorical(
+                "fit_intercept", [True, False]
+            ),
+            "max_iter": 5000,
+            "tol": trial.suggest_float("tol", 1e-6, 1e-3, log=True),
+        }
+    elif model_name == "LGBMRegressor":
+        return {
+            "n_estimators": trial.suggest_int("n_estimators", 100, 1000),
+            "learning_rate": trial.suggest_float(
+                "learning_rate", 1e-3, 0.3, log=True
+            ),
+            "num_leaves": trial.suggest_int("num_leaves", 15, 64),
+            "max_depth": trial.suggest_int("max_depth", 3, 10),
+            "min_child_samples": trial.suggest_int("min_child_samples", 5, 30),
+            "subsample": trial.suggest_float("subsample", 0.5, 1.0),
+            "colsample_bytree": trial.suggest_float(
+                "colsample_bytree", 0.5, 1.0
+            ),
+            "reg_alpha": trial.suggest_float("reg_alpha", 1e-8, 1.0, log=True),
+            "reg_lambda": trial.suggest_float(
+                "reg_lambda", 1e-8, 1.0, log=True
+            ),
+            "verbosity": -1,
+        }
     else:
         return None
 
@@ -252,10 +291,18 @@ def optimize_model(cfg: DictConfig) -> None:
 
     trials_train_rmse = []
     trials_val_rmse = []
+    minimun_rmse = []
+    minimun_trials = []
 
     def objective(trial: optuna.Trial):
         model_params = _get_model_params(model_name, trial)
         model = instantiate(model_partial, **model_params)
+        if hasattr(model, "n_jobs"):
+            model_params.update("n_jobs", cfg["modeling"]["n_jobs"])
+            model = instantiate(model_partial, **model_params)
+        if hasattr(model, "random_state"):
+            model_params.update("random_state", cfg["random_seed"])
+            model = instantiate(model_partial, **model_params)
         pipeline = make_pipeline(StandardScaler(), model())
 
         def fit_and_score(train_idx, val_idx):
@@ -310,11 +357,25 @@ def optimize_model(cfg: DictConfig) -> None:
             }
         )
 
+        if trials_val_rmse:
+            if val_rmse < min(trials_val_rmse):
+                minimun_trials.append(trial.number)
+                minimun_rmse.append(val_rmse)
+
         trials_train_rmse.append(train_rmse)
         trials_val_rmse.append(val_rmse)
 
-        plt.plot(trials_train_rmse, label="Train RMSE")
-        plt.plot(trials_val_rmse, label="Validation RMSE")
+        plt.plot(
+            range(len(trials_train_rmse)),
+            trials_train_rmse,
+            label="Train RMSE",
+        )
+        plt.plot(
+            range(len(trials_val_rmse)),
+            trials_val_rmse,
+            label="Validation RMSE",
+        )
+        plt.plot(minimun_trials, minimun_rmse, label="Best Trials")
         plt.xlabel("Training Size")
         plt.ylabel("RMSE")
         plt.title("Learning Curve")
@@ -325,7 +386,7 @@ def optimize_model(cfg: DictConfig) -> None:
 
         return (
             val_rmse,
-            abs(train_rmse - val_rmse),
+            abs(train_rmse - val_rmse) / val_rmse,
         )
 
     study = optuna.create_study(
@@ -343,8 +404,15 @@ def optimize_model(cfg: DictConfig) -> None:
         callbacks=[early_stopping_cb],
     )
 
+    # Best trial balancing val_rmse and less overfitting
+    best_trial = min(
+        study.best_trials, key=lambda t: t.values[0] + t.values[1]
+    )
+
     # Save trial results
     df_scores = pd.DataFrame(trial_scores)
+    df_scores["is_best_trial"] = df_scores["trial"] == best_trial.number
+    df_scores = df_scores.sort_values(by="is_best_trial", ascending=False)
 
     optimization_history_path = optimization_results_dir / "history.csv"
     df_scores.to_csv(optimization_history_path, index=False)
@@ -352,10 +420,6 @@ def optimize_model(cfg: DictConfig) -> None:
 
     # Train final model with best params
     logger.info("Retriaining best model")
-    # Best trial balancing val_rmse and less overfitting
-    best_trial = min(
-        study.best_trials, key=lambda t: t.values[0] + t.values[1]
-    )
     best_params = best_trial.params
     best_model = instantiate(model_partial, **best_params)
     final_model = make_pipeline(StandardScaler(), best_model())
