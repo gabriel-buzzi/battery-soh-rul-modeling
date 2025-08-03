@@ -26,7 +26,7 @@ modeling:
   num_features: 8
   n_jobs: 2 # Available core for models training
   feature_importances_dir: ./models/feature_importances/
-  max_trials: 5000
+  max_trials: 500
   early_stopping_patience: 10
   optimization_results_dir: ./models/optimization/
   evaluation_results_dir: ./models/evaluation/
@@ -37,7 +37,7 @@ analysis:
 
 defaults:
   - _self_
-  - model: mlp
+  - model: lightgbm
   - override hydra/launcher: joblib
   
 hydra:
@@ -45,6 +45,6 @@ hydra:
     n_jobs: 8 # Concurrency of Hydra runs
   sweeper:
     params:
-      model: extra_trees,xgboost
+      model: extra_trees,lightgbm,tweedie,knn
       modeling.target: SOH,RUL
       modeling.num_features: 4,8,12,16
