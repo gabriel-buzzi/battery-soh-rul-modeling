@@ -1,2 +1,2 @@
-optimization/
-evaluation/
+optimization/**/*.pkl
+evaluation/**/*.csv
