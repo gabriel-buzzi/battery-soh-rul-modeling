@@ -36,35 +36,52 @@ Model performance was evaluated by generating predictions for the test set (25 u
 
 \begin{itemize}
     \item \textbf{Mean Absolute Error (\gls{mae}):} The average absolute difference between predicted and actual values, expressed in the target’s units (e.g., percentage for \gls{soh}, cycles for \gls{rul}).
-    \[
-    \mathrm{MAE} = \frac{1}{n} \sum_{i=1}^{n} \left| y_i - \hat{y}_i \right|
-    \]
+    \begin{equation}
+        \mathrm{MAE} = \frac{1}{n} \sum_{i=1}^{n} \left| y_i - \hat{y}_i \right|
+        \label{eq:mae}    
+    \end{equation}
     
     \item \textbf{Root Mean Squared Error (\gls{rmse}):} The square root of \gls{mse}, emphasizing larger errors while maintaining the target’s units.
-    \[
-    \mathrm{RMSE} = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2}
-    \]
+    \begin{equation}
+        \mathrm{RMSE} = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2}
+        \label{eq:rmse}
+    \end{equation}
     
     \item \textbf{Coefficient of Determination (\gls{r2}):} A metric from 0 to 1, indicating the proportion of variance in the target explained by the model, with 1 representing perfect predictions.
-    \[
-    R^2 = 1 - \frac{\sum_{i=1}^{n} (y_i - \hat{y}_i)^2}{\sum_{i=1}^{n} (y_i - \bar{y})^2}
-    \]
+    \begin{equation}
+        R^2 = 1 - \frac{\sum_{i=1}^{n} (y_i - \hat{y}_i)^2}{\sum_{i=1}^{n} (y_i - \bar{y})^2}
+        \label{eq:r2}
+    \end{equation}
 \end{itemize}
 
 For inference, models require voltage, current, and temperature signals from a single full charge-discharge cycle, sampled at 1 Hz or higher, processed into the 15 features described previously.
 
 \subsection{Hyperparameter Optimization}
 
-% Describing hyperparameter optimization
-Machine learning models rely on hyperparameters—configurable settings that define their structure or learning process, such as the number of trees in a Random Forest or the learning rate in a neural network. Unlike weights, hyperparameters are set prior to training and typically determined empirically. An automated optimization process was employed using the Tree-structured Parzen Estimator (TPE), a Bayesian optimization algorithm that iteratively explores a predefined hyperparameter search space, balancing exploration of new combinations with exploitation of promising ones to minimize \gls{mse}. For detailed information regarding TPE, please refer to \cite{tpe_2011}.
+Machine learning models rely on hyperparameters—configurable settings that define their structure or learning process, such as the number of trees in a Random Forest or the learning rate in a neural network. Unlike model weights, hyperparameters are set prior to training and typically determined empirically. To automate this process, the Tree-structured Parzen Estimator (TPE) \cite{tpe_2011}, a Bayesian optimization algorithm, was employed. TPE iteratively samples from a predefined hyperparameter space, balancing exploration of new configurations with exploitation of previously successful ones.
 
-% Describing cross-validation
-To prevent overfitting, where models perform well on training data but poorly on unseen data, hyperparameter combinations were evaluated using Group K-Fold cross-validation with 5 folds, as illustrated in \cref{fig:kfold}. The 99 training cells were divided into 5 groups, with each group serving as a validation set once while the others form the training set. Grouping ensures that all cycles of a cell remain in the same fold, avoiding data leakage. The average \gls{mse} across the 5 validation sets informs the TPE optimizer, ensuring robust hyperparameter selection. The test set remains excluded from optimization, simulating real-world conditions where ground truth for new cells is unavailable, thus ensuring unbiased evaluation.
+\paragraph{Multi-objective Formulation}
+
+Instead of optimizing a single performance metric, a \textit{multi-objective} approach was adopted to balance predictive accuracy and overfitting. The two objectives minimized simultaneously are:
+
+\begin{itemize}
+  \item The \gls{rmse} on the validation folds, as defined by \cref{eq:rmse}
+  \item The relative generalization gap between training and validation errors:
+    \[
+    \text{RelativeGap} = \frac{|\text{RMSE}_{\text{train}} - \text{RMSE}_{\text{val}}|}{\text{RMSE}_{\text{val}}}
+    \]
+\end{itemize}
+
+This formulation favors models that achieve low error on the validation data while maintaining consistency with training performance, discouraging overfitting. Trials were evaluated using 5-fold Group K-Fold cross-validation. The 99 training cells were partitioned into 5 non-overlapping groups (based on cell ID), ensuring that all cycles from a given cell remained within the same fold, thus preventing data leakage. The final score for each objective is computed as the average of metrics across the 5 validation folds. \cref{fig:kfold} below illustrates the 5-fold cross-validation process adopted.
+
+To improve optimization efficiency and prevent unnecessary trials, an early stopping strategy was employed, so if the Pareto front remained unchanged for a fixed number of consecutive trials (patience = 10), the optimization process was halted. This ensures that exploration ceases when no meaningful improvement is observed across both objectives.
+
+By combining a multi-objective strategy with Pareto-based early stopping, the optimization process effectively identified well-generalized models while minimizing computational cost.
 
 \insertfigure{optimization/kfold}
 
 % Summarizing the methodology
-This methodology leverages full-life data from training cells to develop models that generalize to unseen cells, addressing the challenges of \gls{soh} and \gls{rul} estimation. Through standardized features, \gls{mse} minimization, and hyperparameter optimization via TPE and cross-validation, the approach ensures robust predictions, applicable to battery management despite the dataset’s controlled experimental conditions.
+This methodology leverages full-life data from training cells to develop models that generalize to unseen cells, addressing the challenges of \gls{soh} and \gls{rul} estimation. Through standardized features, multi-object optimization and hyperparameter optimization via TPE and cross-validation, the approach ensures robust predictions avoiding artificially inflated metrics due to overfitting.
 
 % \insertfigure{fig_model}
 % \inserttable{tbl_dataset}
