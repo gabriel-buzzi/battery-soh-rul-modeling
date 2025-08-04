@@ -1,19 +1,29 @@
 \section{State-of-Health (SoH) and Remaining Useful Life (RUL)}
 
-How both are calculated on this dataset: 
+The development of machine learning models for battery prognosis requires clearly defined target variables, namely State-of-Health (SoH) and Remaining Useful Life (RUL). These metrics serve as key performance indicators to quantify the degradation state of a battery. The following section outlines the methodology used to calculate these ground-truth labels from the experimental cycling data.
 
-\[ SoH_n = \frac{\text{Max Discharge Capacity of nth Cycle}}{\text{Rated Cell Capacity}} \]
+\gls{soh} provides a snapshot of a battery's current condition relative to its initial, "healthy" state. It is typically expressed as a percentage of the nominal capacity. For the purpose of this study, the \gls{soh} for the nth cycle, denoted as $SoH_n$, is calculated as the ratio of the maximum discharge capacity observed during that cycle to the rated cell capacity, as shown in \cref{eq:soh}.
 
-\[ EoL = \text{Cycle when SoH is 80\%} \]
+\begin{equation}
+    SoH_n = \frac{C_{n}}{C_{rated}} \label{eq:soh}
+\end{equation}
 
-\[ RUL_n = EoL - n \]
+where $C_n$ is the maximum discharge capacity recorded for the nth cycle, and C rated is the rated capacity of a new cell.
 
-RUL limitation of being define by cycle count: real-world applications don't have well defined cycles.
+A critical limitation in determining the ground-truth SoH in real-world applications is that batteries rarely undergo a full charge or discharge cycle. This makes it challenging to accurately measure the true capacity at any given time. The controlled laboratory setting used to generate this dataset, where full cycles are performed, provides a consistent and reliable method for calculating this critical ground truth.
 
-SOH ground truth limitation: rarely a cell undergoes full charge on real life.
+\gls{rul} represents the number of cycles a battery can endure before it reaches its \gls{eol} condition. \gls{eol} is a predefined failure threshold, commonly set when the battery's capacity drops to 80\% of its initial rated capacity. The \gls{eol} cycle, is therefore defined as the cycle number at which the \gls{soh} first falls to 80\% or below.
 
-RUL ground truth limitation: need data from fully aged cells to know it.
+$$ EoL = \min { n \mid SoH_n \le 0.80 } $$
 
-\insertfigure{soh_and_rul/soh_train_test_dist}
-\insertfigure{soh_and_rul/rul_train_test_dist}
-% \inserttable{tbl_dataset}
+The \gls{rul} for any given cycle n, denoted as $RUL_n$, is then calculated by subtracting the current cycle number from the \gls{eol} cycle number, as expressed in \cref{eq:rul}.
+
+\begin{equation}
+    RUL_n = EoL - n \label{eq:rul} 
+\end{equation}
+
+A significant challenge associated with using cycle count to define \gls{rul} is its limited applicability to real-world scenarios, where usage is often irregular and does not consist of discrete, well-defined cycles. Furthermore, determining the ground truth \gls{rul} for a particular cycle requires having the full degradation data up to the battery's \gls{eol}, which is a common limitation when training \gls{rul} prediction models from incomplete datasets.
+
+Below, \cref{fig:targets_distribution} shows the distribution of both \gls{soh} and \gls{rul} on the dataset from \cite{sev2019}. As can be seen, neither target exhibits a symmetric distribution. This skewed nature necessitates the use of machine learning models that are robust to non-normal data distributions and can effectively capture the non-linear degradation behavior of batteries.
+
+\insertfigure{soh_and_rul/targets_distribution}
