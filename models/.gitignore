@@ -1,2 +1,3 @@
 optimization/**/*.pkl
+optimization/**/*.png
 evaluation/**/*.csv
