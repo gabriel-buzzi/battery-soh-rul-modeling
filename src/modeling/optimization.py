@@ -209,10 +209,18 @@ class MultiObjectiveEarlyStopping:
             study.stop()
 
     def _is_same_front(self, trials: list[optuna.trial.FrozenTrial]) -> bool:
-        # Compare sets of trial numbers (cheap way to check front equality)
-        old_ids = {t.number for t in self._best_trials}
-        new_ids = {t.number for t in trials}
-        return old_ids == new_ids
+        def extract_values(trial_list):
+            return sorted(
+                [
+                    tuple(trial.values)
+                    for trial in trial_list
+                    if trial.values is not None
+                ]
+            )
+
+        old_values = extract_values(self._best_trials)
+        new_values = extract_values(trials)
+        return old_values == new_values
 
 
 def _estimate_mlp_params(input_dim, hidden_layers):
