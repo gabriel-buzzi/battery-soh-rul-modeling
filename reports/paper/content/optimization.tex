@@ -58,25 +58,22 @@ For inference, models require voltage, current, and temperature signals from a s
 
 \subsection{Hyperparameter Optimization}
 
+% Defining hyperparameters and optimization approach
 Machine learning models rely on hyperparameters—configurable settings that define their structure or learning process, such as the number of trees in a Random Forest or the learning rate in a neural network. Unlike model weights, hyperparameters are set prior to training and typically determined empirically. To automate this process, the Tree-structured Parzen Estimator (TPE) \cite{tpe_2011}, a Bayesian optimization algorithm, was employed. TPE iteratively samples from a predefined hyperparameter space, balancing exploration of new configurations with exploitation of previously successful ones.
 
-\paragraph{Multi-objective Formulation}
+To balance predictive accuracy and model generalization, a custom cost function was adopted, combining validation error and the generalization gap. The objective to minimize is defined as:
 
-Instead of optimizing a single performance metric, a \textit{multi-objective} approach was adopted to balance predictive accuracy and overfitting. The two objectives minimized simultaneously are:
+\[
+\text{Loss} = \text{RMSE}_{\text{val}} + \frac{|\text{RMSE}_{\text{train}} - \text{RMSE}_{\text{val}}|}{\text{RMSE}_{\text{val}}}
+\]
 
-\begin{itemize}
-  \item The \gls{rmse} on the validation folds, as defined by \cref{eq:rmse}
-  \item The relative generalization gap between training and validation errors:
-    \[
-    \text{RelativeGap} = \frac{|\text{RMSE}_{\text{train}} - \text{RMSE}_{\text{val}}|}{\text{RMSE}_{\text{val}}}
-    \]
-\end{itemize}
+where \(\text{RMSE}_{\text{val}}\) is the root mean square error on the validation folds, as defined by \cref{eq:rmse}, and the second term, \(\frac{|\text{RMSE}_{\text{train}} - \text{RMSE}_{\text{val}}|}{\text{RMSE}_{\text{val}}}\), represents the relative generalization gap between training and validation errors. This formulation penalizes both high validation errors and large discrepancies between training and validation performance, effectively discouraging overfitting while prioritizing predictive accuracy.
 
-This formulation favors models that achieve low error on the validation data while maintaining consistency with training performance, discouraging overfitting. Trials were evaluated using 5-fold Group K-Fold cross-validation. The 99 training cells were partitioned into 5 non-overlapping groups (based on cell ID), ensuring that all cycles from a given cell remained within the same fold, thus preventing data leakage. The final score for each objective is computed as the average of metrics across the 5 validation folds. \cref{fig:kfold} below illustrates the 5-fold cross-validation process adopted.
+% Explaining cross-validation setup
+Trials were evaluated using 5-fold Group K-Fold cross-validation. The 99 training cells were partitioned into 5 non-overlapping groups (based on cell ID), ensuring that all cycles from a given cell remained within the same fold to prevent data leakage. The final loss score is computed as the average of the defined loss across the 5 validation folds. \cref{fig:kfold} below illustrates the 5-fold cross-validation process adopted.
 
-To improve optimization efficiency and prevent unnecessary trials, an early stopping strategy was employed, so if the Pareto front remained unchanged for a fixed number of consecutive trials (patience = 10), the optimization process was halted. This ensures that exploration ceases when no meaningful improvement is observed across both objectives.
-
-By combining a multi-objective strategy with Pareto-based early stopping, the optimization process effectively identified well-generalized models while minimizing computational cost.
+% Detailing early stopping strategy
+To improve optimization efficiency and prevent unnecessary trials, an early stopping strategy was employed. If the cost does not improve for a fixed number of consecutive trials (patience = 10), the optimization process is halted. This ensures that exploration ceases when no meaningful improvement is observed.
 
 \insertfigure{optimization/kfold}
 
