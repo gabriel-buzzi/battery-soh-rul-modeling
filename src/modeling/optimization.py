@@ -150,77 +150,30 @@ def _get_model_params(
         return None
 
 
-# class EarlyStoppingCallback:
-#     """Early stopping callback for hyperparam optimization."""
+class EarlyStoppingCallback:
+    """Early stopping callback for hyperparam optimization."""
 
-#     def __init__(self, patience: int):
-#         self.patience = patience
-#         self._best_value = float("inf")
-#         self._no_improvement_count = 0
-
-#     def __call__(self, study: optuna.Study, trial: optuna.trial.FrozenTrial):
-#         """Class caller to evalute improvement."""
-#         if (
-#             study.best_value < self._best_value - 1e-8
-#         ):  # significant improvement
-#             self._best_value = study.best_value
-#             self._no_improvement_count = 0
-#         else:
-#             self._no_improvement_count += 1
-
-#         if self._no_improvement_count >= self.patience:
-#             print(
-#                 f"Early stopping triggered after {self.patience} "
-#                 "trials with no improvement."
-#             )
-#             study.stop()
-
-
-class MultiObjectiveEarlyStopping:
-    """Multi-objective early stopping callback for hyperparam optimization.
-
-    It tracks the Pareto front (list of study.best_trials).
-    If the current Pareto front is unchanged for patience trials, it stops.
-    """
-
-    def __init__(self, patience: int = 10):
+    def __init__(self, patience: int):
         self.patience = patience
-        self._best_trials = []
+        self._best_value = float("inf")
         self._no_improvement_count = 0
 
     def __call__(self, study: optuna.Study, trial: optuna.trial.FrozenTrial):
         """Class caller to evalute improvement."""
-        # Keep only non-dominated (Pareto optimal) trials
-        current_pareto_trials = study.best_trials
-
-        # Check if Pareto front improved
-        if not self._is_same_front(current_pareto_trials):
-            self._best_trials = current_pareto_trials
+        if (
+            study.best_value < self._best_value - 1e-8
+        ):  # significant improvement
+            self._best_value = study.best_value
             self._no_improvement_count = 0
         else:
             self._no_improvement_count += 1
 
-        # Trigger early stopping if no improvement
         if self._no_improvement_count >= self.patience:
             print(
-                "Early stopping triggered (no Pareto improvement"
-                f"in {self.patience} trials)."
+                f"Early stopping triggered after {self.patience} "
+                "trials with no improvement."
             )
             study.stop()
-
-    def _is_same_front(self, trials: list[optuna.trial.FrozenTrial]) -> bool:
-        def extract_values(trial_list):
-            return sorted(
-                [
-                    tuple(trial.values)
-                    for trial in trial_list
-                    if trial.values is not None
-                ]
-            )
-
-        old_values = extract_values(self._best_trials)
-        new_values = extract_values(trials)
-        return old_values == new_values
 
 
 def _estimate_mlp_params(input_dim, hidden_layers):
@@ -412,17 +365,21 @@ def optimize_model(cfg: DictConfig) -> None:
         plt.savefig(optimization_results_dir / "optimization_losses.png")
         plt.clf()
 
-        return (
-            val_rmse,
-            abs(train_rmse - val_rmse) / val_rmse,
-        )
+        return (val_rmse + abs(train_rmse - val_rmse) / val_rmse,)
 
-    study = optuna.create_study(
-        directions=["minimize", "minimize"],
-        sampler=optuna.samplers.NSGAIISampler(seed=cfg["random_seed"]),
+    sampler = optuna.samplers.TPESampler(
+        n_startup_trials=15,
+        n_ei_candidates=50,
+        multivariate=True,
+        seed=cfg["random_seed"],
     )
 
-    early_stopping_cb = MultiObjectiveEarlyStopping(
+    study = optuna.create_study(
+        direction="minimize",
+        sampler=sampler,
+    )
+
+    early_stopping_cb = EarlyStoppingCallback(
         patience=cfg["modeling"]["early_stopping_patience"]
     )
 
@@ -432,10 +389,8 @@ def optimize_model(cfg: DictConfig) -> None:
         callbacks=[early_stopping_cb],
     )
 
-    # Best trial balancing val_rmse and less overfitting
-    best_trial = min(
-        study.best_trials, key=lambda t: t.values[0] + t.values[1]
-    )
+    # Best trial from optuna study
+    best_trial = study.best_trial
 
     # Save trial results
     df_scores = pd.DataFrame(trial_scores)
