@@ -22,11 +22,12 @@ data:
   test_data_path: ./data/interim/test_df.parquet
 
 modeling:
+  optimization_subset_frac: 0.1 # Proportion of the train data used to optimize hyperparams
   target: SOH
   num_features: 8
-  n_jobs: 2 # Available core for models training
+  n_jobs: 4 # Available core for models training
   feature_importances_dir: ./models/feature_importances/
-  max_trials: 500
+  max_trials: 50
   early_stopping_patience: 10
   optimization_results_dir: ./models/optimization/
   evaluation_results_dir: ./models/evaluation/
@@ -37,14 +38,14 @@ analysis:
 
 defaults:
   - _self_
-  - model: lightgbm
+  - model: tweedie
   - override hydra/launcher: joblib
   
 hydra:
   launcher:
-    n_jobs: 8 # Concurrency of Hydra runs
+    n_jobs: 4 # Concurrency of Hydra runs
   sweeper:
     params:
-      model: extra_trees,lightgbm,tweedie,knn
+      model: lightgbm,tweedie,knn
       modeling.target: SOH,RUL
       modeling.num_features: 4,8,12,16

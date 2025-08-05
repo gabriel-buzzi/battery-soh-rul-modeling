@@ -271,12 +271,21 @@ def optimize_model(cfg: DictConfig) -> None:
 
     selected_features = features_sorted_by_importance[:num_features]
 
-    X_train = train_df[selected_features]
-    y_train = train_df[target]
-    cells = train_df["cell"]
+    frac = cfg["modeling"]["optimization_subset_frac"]
+    subset_train_df = train_df.sample(
+        frac=frac, random_state=cfg["random_seed"]
+    )
+    subset_X_train = subset_train_df[selected_features]
+    subset_y_train = subset_train_df[target]
+    subset_cells = subset_train_df["cell"]
 
-    logger.info(f"Train data shape: {X_train.shape}")
-    logger.info(f"Using features: {selected_features}")
+    logger.info(
+        f"Using {subset_X_train.shape[0]} samples (~{frac * 100:.0f}% of train"
+        " data) for hyperparameters optimization"
+    )
+    logger.info(
+        f"Using {len(selected_features)} features: {selected_features}"
+    )
 
     gkf = GroupKFold(n_splits=5)
 
@@ -308,14 +317,23 @@ def optimize_model(cfg: DictConfig) -> None:
         if hasattr(model, "n_jobs"):
             model_params.update("n_jobs", cfg["modeling"]["n_jobs"])
             model = instantiate(model_partial, **model_params)
+        elif hasattr(model, "num_threads"):
+            model_params.update("num_threads", cfg["modeling"]["n_jobs"])
+            model = instantiate(model_partial, **model_params)
         if hasattr(model, "random_state"):
             model_params.update("random_state", cfg["random_seed"])
             model = instantiate(model_partial, **model_params)
         pipeline = make_pipeline(StandardScaler(), model())
 
         def fit_and_score(train_idx, val_idx):
-            X_tr, X_val = X_train.iloc[train_idx], X_train.iloc[val_idx]
-            y_tr, y_val = y_train.iloc[train_idx], y_train.iloc[val_idx]
+            X_tr, X_val = (
+                subset_X_train.iloc[train_idx].to_numpy(),
+                subset_X_train.iloc[val_idx].to_numpy(),
+            )
+            y_tr, y_val = (
+                subset_y_train.iloc[train_idx].to_numpy(),
+                subset_y_train.iloc[val_idx].to_numpy(),
+            )
 
             pipeline_clone = clone(pipeline)
             pipeline_clone.fit(X_tr, y_tr)
@@ -332,7 +350,9 @@ def optimize_model(cfg: DictConfig) -> None:
 
         scores = Parallel(n_jobs=n_jobs)(
             delayed(fit_and_score)(train_idx, val_idx)
-            for train_idx, val_idx in gkf.split(X_train, y_train, groups=cells)
+            for train_idx, val_idx in gkf.split(
+                subset_X_train, subset_y_train, groups=subset_cells
+            )
         )
 
         val_rmse_list, val_r2_list, train_rmse_list, train_r2_list = zip(
@@ -399,7 +419,7 @@ def optimize_model(cfg: DictConfig) -> None:
 
     study = optuna.create_study(
         directions=["minimize", "minimize"],
-        sampler=optuna.samplers.TPESampler(seed=cfg["random_seed"]),
+        sampler=optuna.samplers.NSGAIISampler(seed=cfg["random_seed"]),
     )
 
     early_stopping_cb = MultiObjectiveEarlyStopping(
@@ -431,6 +451,9 @@ def optimize_model(cfg: DictConfig) -> None:
     best_params = best_trial.params
     best_model = instantiate(model_partial, **best_params)
     final_model = make_pipeline(StandardScaler(), best_model())
+    # Full train dataset
+    X_train = train_df[selected_features].to_numpy()
+    y_train = train_df[target].to_numpy()
     final_model.fit(X_train, y_train)
     optimized_model_path = optimization_results_dir / "best_model.joblib"
     joblib.dump(final_model, optimized_model_path)
