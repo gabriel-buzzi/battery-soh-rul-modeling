@@ -1,0 +1,25 @@
+% Table for RUL
+\begin{table}[H]
+    \centering
+    \caption{Mean training and validation RMSE and relative gap across folds for machine learning models predicting Remaining Useful Life (RUL) using 4 or 16 features, evaluated via 5-fold cross-validation.}
+    \label{tab:rul_training_metrics}
+    \begin{tabular}{lcrrr}
+    \toprule
+    Model & Features & \multicolumn{2}{c}{RMSE} & Relative Gap \\
+    \cmidrule(lr){3-4}
+          &          & Train & Validation & \\
+    \midrule
+    \multirow{2}{*}{ExtraTreesRegressor} & 16 & 31.38 & 103.64 & 0.70 \\
+                                         & 4  & 52.33 & 110.00 & 0.52 \\
+    \cmidrule{1-5}
+    \multirow{2}{*}{LGBMRegressor}       & 16 & 18.51 & 106.14 & 0.83 \\
+                                         & 4  & 22.12 & 109.09 & 0.80 \\
+    \cmidrule{1-5}
+    \multirow{2}{*}{KNeighborsRegressor} & 16 & 56.22 & 143.10 & 0.61 \\
+                                         & 4  & 51.19 & 112.09 & 0.54 \\
+    \cmidrule{1-5}
+    \multirow{2}{*}{TweedieRegressor}    & 16 & 367.01 & 367.01 & 0.00 \\
+                                         & 4  & 337.10 & 340.03 & 0.01 \\
+    \bottomrule
+    \end{tabular}
+\end{table}

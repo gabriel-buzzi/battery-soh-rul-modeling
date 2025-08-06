@@ -1,0 +1,25 @@
+% Table for RUL
+\begin{table}[H]
+    \centering
+    \caption{Performance metrics (RMSE and R²) for machine learning models predicting Remaining Useful Life (RUL) using 4 or 16 features, evaluated via 5-fold cross-validation.}
+    \label{tab:rul_metrics}
+    \begin{tabular}{lcrrrr}
+    \toprule
+    Model & Features & \multicolumn{2}{c}{RMSE} & \multicolumn{2}{c}{R²} \\
+    \cmidrule(lr){3-4} \cmidrule(lr){5-6}
+          &          & Median & Q3 & Median & Q1 \\
+    \midrule
+    \multirow{2}{*}{ExtraTreesRegressor} & 16 & 41.63 & 59.91 & 0.96 & 0.90 \\
+                                         & 4  & 45.21 & 68.41 & 0.96 & 0.91 \\
+    \cmidrule{1-6}
+    \multirow{2}{*}{LGBMRegressor}       & 16 & 49.46 & 76.74 & 0.95 & 0.89 \\
+                                         & 4  & 59.92 & 69.59 & 0.93 & 0.91 \\
+    \cmidrule{1-6}
+    \multirow{2}{*}{KNeighborsRegressor} & 16 & 54.17 & 95.94 & 0.93 & 0.79 \\
+                                         & 4  & 63.85 & 100.44 & 0.91 & 0.81 \\
+    \cmidrule{1-6}
+    \multirow{2}{*}{TweedieRegressor}    & 16 & 63.52 & 102.68 & 0.90 & 0.71 \\
+                                         & 4  & 89.41 & 124.98 & 0.85 & 0.60 \\
+    \bottomrule
+    \end{tabular}
+\end{table}

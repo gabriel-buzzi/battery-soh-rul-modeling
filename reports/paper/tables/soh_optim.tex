@@ -1,0 +1,25 @@
+% Table for SOH
+\begin{table}[H]
+    \centering
+    \caption{Mean training and validation RMSE and relative gap across folds for machine learning models predicting State of Health (SOH) using 4 or 16 features, evaluated via 5-fold cross-validation.}
+    \label{tab:soh_training_metrics}
+    \begin{tabular}{lcrrr}
+    \toprule
+    Model & Features & \multicolumn{2}{c}{RMSE} & Relative Gap \\
+    \cmidrule(lr){3-4}
+          &          & Train & Validation & \\
+    \midrule
+    \multirow{2}{*}{LGBMRegressor}       & 16 & 0.52 & 0.94 & 0.44 \\
+                                         & 4  & 0.86 & 1.22 & 0.29 \\
+    \cmidrule{1-5}
+    \multirow{2}{*}{ExtraTreesRegressor} & 16 & 0.78 & 1.07 & 0.27 \\
+                                         & 4  & 1.23 & 1.40 & 0.12 \\
+    \cmidrule{1-5}
+    \multirow{2}{*}{KNeighborsRegressor} & 16 & 0.80 & 1.28 & 0.38 \\
+                                         & 4  & 1.15 & 1.50 & 0.24 \\
+    \cmidrule{1-5}
+    \multirow{2}{*}{TweedieRegressor}    & 16 & 1.66 & 1.77 & 0.06 \\
+                                         & 4  & 2.03 & 2.06 & 0.01 \\
+    \bottomrule
+    \end{tabular}
+\end{table}
