@@ -25,7 +25,7 @@ modeling:
   optimization_subset_frac: 0.1 # Proportion of the train data used to optimize hyperparams
   target: SOH
   num_features: 8
-  n_jobs: 4 # Available core for models training
+  n_jobs: 2 # Available core for models training
   feature_importances_dir: ./models/feature_importances/
   max_trials: 50
   early_stopping_patience: 10
@@ -43,9 +43,9 @@ defaults:
   
 hydra:
   launcher:
-    n_jobs: 4 # Concurrency of Hydra runs
+    n_jobs: 8 # Concurrency of Hydra runs
   sweeper:
     params:
-      model: lightgbm,tweedie,knn
+      model: lightgbm,tweedie,knn,extra_trees
       modeling.target: SOH,RUL
-      modeling.num_features: 4,8,12,16
+      modeling.num_features: 4,16
