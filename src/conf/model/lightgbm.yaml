@@ -1,2 +1,3 @@
 _target_: lightgbm.LGBMRegressor
+num_threads: 2
 _partial_: true
