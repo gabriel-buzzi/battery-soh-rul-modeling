@@ -1,14 +1,28 @@
 \section{Results}
 
 \subsection{Optimization Results}
-\inserttable{rul_optim}
+
+\cref{tab:soh_training_metrics,tab:rul_training_metrics} below show the results of the optimization process for both \gls{soh} and \gls{rul}, respectively. It can be seen that the models produced good values of validation \gls{rmse}, which is the average of the \gls{rmse} on each fold of cross validation, while maintaining low relative gaps which is a good indicative of non-overfitting models. For \gls{rul} models, authough it was harder to keep the relative gap values low, which indicates models for that target with the features extracted on this work are more prone to overfitt the training data.
+
 \inserttable{soh_optim}
+\inserttable{rul_optim}
+
+% Insert table with the best hyperparams for each model
 
 \subsection{Test Results}
 
-\inserttable{rul_metrics}
+The results of each model type using the optimzal hyperparam set are shown on \cref{tab:soh_metrics,tab:rul_metrics} for \gls{soh} and \gls{rul}, respectively. The performance drop between using 16 and 4 features were relatively low indicating models with only the most important features identifies by the Tree-based ensamble recribed on \cref{sec:feature_extraction} is feasible.
+
+The overall performance of all models is satisfatory with \gls{rmse} values below 0.80\% for \gls{soh} using a LGBMRegressor for 75\% of the test cells and below 59.91 for \gls{rul} using an ExtraTreesRegressor for 75\% of the test cells. \gls{r2} values for 75\% of the test cells were above 0.97 and 0.96 for \gls{soh} and \gls{rul}, respectively. Indicating high accordance between the models estimations and references values.
+
 \inserttable{soh_metrics}
-\insertfigure{results/best_16_rul_model}
-\insertfigure{results/best_4_rul_model}
+\inserttable{rul_metrics}
+
+
+\cref{fig:best_16_soh_model,fig:best_16_rul_model,fig:best_4_soh_model,fig:best_4_rul_model} below show in detail the scatter plots of all reference vs. estimated values of all test cells for the best model in each case: \gls{soh} and \gls{rul} and unsing all 16 features and only 4 features. It can be confirmed that the model works realy well for most data while some points are more distant from the indeal fit line. For \gls{soh} models under and over estimate values while for \gls{rul} models tend to under estimate the values. For the \gls{rul} models with 16 and 4 features it can be noticed that a similar set of points diverge from the ideal regression line, we identified that this points corresponde to the same cell of the test set. From the plot it can be seen that this cells is the only with almost 2000 cycles cyclelife, this divergence of the model might be happening because data with \gls{rul} values that high are more scarce on the training set as well due to the fact fill cells cycle that long on the dataset used.
+
+
 \insertfigure{results/best_16_soh_model}
 \insertfigure{results/best_4_soh_model}
+\insertfigure{results/best_16_rul_model}
+\insertfigure{results/best_4_rul_model}
