@@ -33,28 +33,27 @@ This yielded 16 features per cycle: 6 for voltage, 5 for current, and 5 for temp
 \subsection{Features Processing}
 
 % Addressing outliers and noise
-Despite preprocessing, some cycles exhibited outlier feature values, evident in \cref{fig:full_cycle_features_without_filter}. Such anomalies, common in real-world settings with unknown cells, can disrupt model training. For training data, we mitigated these issues while preserving them in test data to assess real-world robustness and avoid data leakage, once both processing steps applied relies on the feature values of the cycles around the cycle being processed. Two processing steps were applied:
+Despite preprocessing, some cycles exhibited outlier feature values, evident in \cref{fig:features}. Such anomalies, common in real-world settings with unknown cells, can disrupt model training. For training data, we mitigated these issues while preserving them in test data to assess real-world robustness and avoid data leakage, once both processing steps applied relies on the feature values of the cycles around the cycle being processed. Two processing steps were applied:
 
 \begin{enumerate}
     \item \textbf{Spike removal:} For each feature per cell, a 10-cycle sliding window identified values below the 5th or above the 95th percentile, replacing them with the prior cycle’s value to eliminate spikes.
     \item \textbf{Smoothing:} A first-order Savitzky-Golay filter with a 10-cycle window was used to dampen cycle-to-cycle oscillations, which do not reflect the gradual evolution of \gls{soh} and \gls{rul}.
 \end{enumerate}
 
-The processed features, shown in \cref{fig:full_cycle_features}, retain degradation trends while reducing noise and anomalies.
+The processed features, shown in \cref{fig:features_with_filter}, retain degradation trends while reducing noise and anomalies.
 
-\insertfigure{features_extraction/full_cycle_features_without_filter}
-\insertfigure{features_extraction/full_cycle_features}
+\insertfigure{features_extraction/features}
+\insertfigure{features_extraction/features_with_filter}
 
 \subsection{Features Analysis}
 
 % Analyzing feature trends
-The processed feature trajectories in \cref{fig:full_cycle_features} reveal distinct aging patterns. Voltage mean decreases while median increases, likely due to heightened variability (\gls{std} and \gls{iqr}) from rising internal resistance. Voltage kurtosis and differential entropy decline, possibly as extended constant voltage phases in aged cells yield more uniform signals. Current mean remains near zero, reflecting balanced charge-discharge durations, while median decreases due to prolonged constant-voltage charging with lower currents. Current \gls{std} drops as aged cells handle high currents less variably, and \gls{iqr} rises then falls, possibly tied to impedance shifts. Temperature features generally increase, driven by greater heat from internal resistance, though kurtosis shows a rise-then-fall pattern, meriting further study.
+The processed feature trajectories in \cref{fig:features_with_filter} reveal distinct aging patterns. Voltage mean decreases while median increases, likely due to heightened variability (\gls{std} and \gls{iqr}) from rising internal resistance. Voltage kurtosis and differential entropy decline, possibly as extended constant voltage phases in aged cells yield more uniform signals. Current mean remains near zero, reflecting balanced charge-discharge durations, while median decreases due to prolonged constant-voltage charging with lower currents. Current \gls{std} drops as aged cells handle high currents less variably, and \gls{iqr} rises then falls, possibly tied to impedance shifts. Temperature features generally increase, driven by greater heat from internal resistance, though kurtosis shows a rise-then-fall pattern, meriting further study.
 
 % Correlation analysis
-Pearson correlation coefficients between features and targets (\gls{soh} and \gls{rul}), shown in \cref{fig:correlation_full_cycle_filtered_only}, highlight strong relationships, especially among voltage features, making them key candidates for modeling. Spearman coefficients in \cref{fig:spearman_full_cycle_filtered_only} often exceed Pearson values, suggesting non-linear dependencies.
+Pearson correlation coefficients between features and targets (\gls{soh} and \gls{rul}), shown in \cref{fig:correlation_heatmap}, highlight strong relationships, especially among voltage features, making them key candidates for modeling.
 
-\insertfigure{features_extraction/correlation_full_cycle_filtered_only}
-\insertfigure{features_extraction/spearman_full_cycle_filtered_only}
+\insertfigure{features_extraction/correlation_heatmap}
 
 \subsection{Feature Selection}
 
