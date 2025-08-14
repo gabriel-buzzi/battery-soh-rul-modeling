@@ -1,28 +1,49 @@
-\section{Models}
+\subsection{Machine Learning Models}
 
-Different types of algorithms have distinct properties and are capable of capturing statistical relationships between input (predictor) and output (target) variables in various ways. It is not possible to determine in advance which algorithm will be more or less suitable for a given problem, as this depends on the relationship between the data and the algorithm's capabilities. Generally, linear models can recognize simpler patterns (linear in nature), while nonlinear models can capture more complex relationships, albeit at the cost of requiring larger amounts of training data.
-In addition to the type of model used, the ``settings'' of each model, known as hyperparameters, can also be varied. These are parameters not automatically learned during training but must be manually adjusted beforehand. Tuning these hyperparameters alters the model's properties, affecting the training process and the final inference performance.
-In this context, the most common approach in the literature for selecting an algorithm and its hyperparameter settings for a specific problem is experimentation and comparison. Accordingly, this work evaluates a series of algorithms through a systematic hyperparameter tuning process to determine which algorithm best fits the problem's data, achieving the highest inference accuracy. The algorithms evaluated are listed below, followed by a brief explanation of their functionality, with the hyperparameter optimization process described in detail in subsequent sections.
+In this study, we evaluated four machine learning regression models on our dataset to predict the target variable. The models include the Tweedie Regressor, K-Nearest Neighbors (KNN) Regressor, Extra Trees Regressor, and LightGBM Regressor. Each model was trained and tested using standard cross-validation techniques to ensure robustness. Below, we describe each model and its mathematical formulation.
 
-\subsection{Elastic Net}
+\subsubsection{Tweedie Regressor}
 
-\subsection{KNN}
+The Tweedie Regressor is a generalized linear model tailored for response variables following a Tweedie distribution, suitable for datasets with zero-inflated or positively skewed data (e.g., insurance claims or rainfall). It models the expected value of the response variable \( y \) given features \( \mathbf{x} \) as:
 
-\subsection{Random Forest}
+\[
+\mu(\mathbf{x}) = \exp(\mathbf{x}^T \boldsymbol{\beta}),
+\]
 
-Random Forest is an ensemble method that combines multiple decision trees using bootstrap aggregating (bagging). Each tree is trained on a different bootstrap sample of the data, and at each split, only a random subset of variables is considered.
-The final prediction is the average of all tree predictions: \begin{equation} \hat{y} = \frac{1}{B} \sum_{b=1}^{B} T_b(\mathbf{x}) \end{equation}
-where $B$ is the number of trees, and $T_b$ is the $b$-th tree. This approach significantly reduces variance compared to individual trees while maintaining low bias. Random Forest offers strong out-of-the-box performance, is robust to outliers, and provides measures of variable importance.
+where \( \boldsymbol{\beta} \) is the coefficient vector, and the model optimizes the Tweedie deviance loss function:
 
-\subsection{LightGBM}
+\[
+\text{Deviance} = 2 \sum_{i=1}^n \left[ \frac{y_i^{2-p}}{(1-p)(2-p)} - \frac{y_i \mu_i^{1-p}}{1-p} + \frac{\mu_i^{2-p}}{2-p} \right],
+\]
 
-LightGBM (Light Gradient Boosting Machine) is a gradient boosting framework developed by Microsoft that uses tree-based algorithms. Unlike other boosting methods that grow trees level-wise, LightGBM grows trees leaf-wise, expanding the leaf that most reduces the loss.
-The model combines multiple weak trees sequentially: 
-\begin{equation} 
-    F_m(\mathbf{x}) = F_{m-1}(\mathbf{x}) + \gamma_m h_m(\mathbf{x}) 
-\end{equation}
-where $h_m$ is the $m$-th tree, and $\gamma_m$ is its associated weight. LightGBM offers high computational efficiency, low memory usage, and good accuracy, making it particularly effective for large datasets. It includes optimizations such as continuous variable discretization and efficient parallelization.
+with \( p \) (where \( 1 < p < 2 \)) controlling the Tweedie distribution's variance-power relationship. This loss balances the fit for zero and non-zero values, making it effective for mixed distributions.
 
+\subsubsection{K-Nearest Neighbors (KNN) Regressor}
 
-% \insertfigure{fig_model}
-% \inserttable{tbl_dataset}
+The KNN Regressor predicts the target value for a test instance \( \mathbf{x} \) by averaging the target values of its \( k \) nearest neighbors in the feature space:
+
+\[
+\hat{y}(\mathbf{x}) = \frac{1}{k} \sum_{\mathbf{x}_i \in \mathcal{N}_k(\mathbf{x})} y_i,
+\]
+
+where \( \mathcal{N}_k(\mathbf{x}) \) is the set of \( k \) nearest neighbors based on a distance metric (e.g., Euclidean distance, \( d(\mathbf{x}, \mathbf{x}_i) = \sqrt{(\mathbf{x} - \mathbf{x}_i)^T (\mathbf{x} - \mathbf{x}_i)} \)). The prediction is a simple average, making KNN intuitive but sensitive to the choice of \( k \) and feature scaling.
+
+\subsubsection{Extra Trees Regressor}
+
+The Extra Trees Regressor is an ensemble method that constructs multiple decision trees with randomized splits and aggregates their predictions. For a test instance \( \mathbf{x} \), the prediction is:
+
+\[
+\hat{y}(\mathbf{x}) = \frac{1}{T} \sum_{t=1}^T h_t(\mathbf{x}),
+\]
+
+where \( T \) is the number of trees, and \( h_t(\mathbf{x}) \) is the prediction from the \( t \)-th tree. Each tree is built by selecting random features and split thresholds, reducing variance through averaging while maintaining computational efficiency compared to standard Random Forests.
+
+\subsubsection{LightGBM Regressor}
+
+The LightGBM Regressor is a gradient boosting framework that constructs an additive model of weak learners (decision trees):
+
+\[
+\hat{y}(\mathbf{x}) = \sum_{m=1}^M f_m(\mathbf{x}),
+\]
+
+where \( f_m(\mathbf{x}) \) is the \( m \)-th tree, and \( M \) is the number of boosting iterations. The model minimizes a loss function (e.g., mean squared error, \( L(y, \hat{y}) = \frac{1}{n} \sum_{i=1}^n (y_i - \hat{y}_i)^2 \)) by iteratively adding trees that reduce the gradient of the loss. LightGBM uses histogram-based splitting and leaf-wise growth for efficiency, making it scalable for large datasets.
