@@ -12,7 +12,6 @@
 % Math
 \usepackage{amsmath, amssymb, amsfonts}
 \usepackage{siunitx}
-\sisetup{output-exponent-marker=\ensuremath{\mathrm{e}}}
 
 % Tables
 \usepackage{booktabs}
@@ -20,6 +19,15 @@
 \usepackage{array}
 \usepackage{tabularx}
 \usepackage{longtable}
+\sisetup{
+    table-format = 1.6,
+    round-mode = places,
+    round-precision = 3,
+    detect-mode,
+    detect-family,
+    detect-inline-family=math,
+}
+\sisetup{zero-decimal-to-integer}
 
 % Graphics
 \usepackage{graphicx}

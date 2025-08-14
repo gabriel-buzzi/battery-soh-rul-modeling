@@ -1,0 +1,60 @@
+\begin{table}[ht]
+    \centering
+    \caption{Optimal hyperparameters for RUL prediction}
+    \label{tab:rul_hyperparams}
+    \begin{tabular}{lllc}
+    \toprule
+    Model & Num. Features & Hyper Param & Optimal Value \\
+    \midrule
+    \multirow{5}{*}{ExtraTreesRegressor} & \multirow{5}{*}{\num{16}} & n\_estimators & \num{62} \\
+    & & max\_depth & \num{10} \\
+    & & min\_samples\_split & \num{4} \\
+    & & min\_samples\_leaf & \num{4} \\
+    & & criterion & squared\_error \\
+    \cmidrule(l){2-4}
+    & \multirow{5}{*}{\num{4}} & n\_estimators & \num{110} \\
+    & & max\_depth & \num{10} \\
+    & & min\_samples\_split & \num{9} \\
+    & & min\_samples\_leaf & \num{2} \\
+    & & criterion & squared\_error \\
+    \midrule
+    \multirow{3}{*}{KNeighborsRegressor} & \multirow{3}{*}{\num{16}} & n\_neighbors & \num{35} \\
+    & & weights & uniform \\
+    & & p & \num{1} \\
+    \cmidrule(l){2-4}
+    & \multirow{3}{*}{\num{4}} & n\_neighbors & \num{21} \\
+    & & weights & uniform \\
+    & & p & \num{2} \\
+    \midrule
+    \multirow{9}{*}{LGBMRegressor} & \multirow{9}{*}{\num{16}} & n\_estimators & \num{563} \\
+    & & learning\_rate & \num{0.0293415275650007} \\
+    & & num\_leaves & \num{17} \\
+    & & max\_depth & \num{7} \\
+    & & min\_child\_samples & \num{9} \\
+    & & subsample & \num{0.5325257964926398} \\
+    & & colsample\_bytree & \num{0.9744427686266666} \\
+    & & reg\_alpha & \num{0.530953226900921} \\
+    & & reg\_lambda & \num{0.0293210004718329} \\
+    \cmidrule(l){2-4}
+    & \multirow{9}{*}{\num{4}} & n\_estimators & \num{400} \\
+    & & learning\_rate & \num{0.1123189435432641} \\
+    & & num\_leaves & \num{24} \\
+    & & max\_depth & \num{9} \\
+    & & min\_child\_samples & \num{15} \\
+    & & subsample & \num{0.7774469727501079} \\
+    & & colsample\_bytree & \num{0.6752997137819545} \\
+    & & reg\_alpha & \num{0.000574402723477} \\
+    & & reg\_lambda & \num{0.0000355834220233792} \\
+    \midrule
+    \multirow{4}{*}{TweedieRegressor} & \multirow{4}{*}{\num{16}} & power & \num{1.3779972601681014} \\
+    & & alpha & \num{0.00001951722464144947} \\
+    & & fit\_intercept & True \\
+    & & tol & \num{0.0001331121608073} \\
+    \cmidrule(l){2-4}
+    & \multirow{4}{*}{\num{4}} & power & \num{1.7609371175115585} \\
+    & & alpha & \num{0.00002769889922756281} \\
+    & & fit\_intercept & True \\
+    & & tol & \num{0.000009462175356461489} \\
+    \bottomrule
+    \end{tabular}
+\end{table}
