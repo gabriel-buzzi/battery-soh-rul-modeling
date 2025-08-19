@@ -1,7 +1,7 @@
 \section{Feature Extraction} \label{sec:feature_extraction}
 
 % Introducing the purpose and approach
-Feature extraction is a pivotal step in estimating the State of Health (\gls{soh}) and Remaining Useful Life (\gls{rul}) of lithium-ion battery cells, particularly for cells unseen by the model during training. Since \gls{soh} and \gls{rul} evolve gradually on a cycle-by-cycle basis, analyzing raw signals sample-by-sample—especially in fast-charging scenarios—is impractical due to noise and high dimensionality. Instead, aggregating information from entire charge-discharge cycles provides a more meaningful representation of battery degradation. While one could concatenate all samples from a cycle and input them directly into a machine learning model, this risks introducing collinear features and spurious correlations from irrelevant signal variations. Alternative dimensionality reduction techniques, such as Principal Component Analysis (\gls{pca}), Partial Least Squares (\gls{pls}), or Kernel \gls{pca}, could transform cycle samples into a lower-dimensional latent space in an unsupervised manner, with the transformed data then used for supervised learning. Similarly, neural network auto-encoders, including those leveraging recurrent architectures or convolutional processing of time-series-turned-images, offer sophisticated transformations by encoding signals into compact embeddings. However, directly feeding raw signals into complex \gls{nn} models, while feasible, demands significant computational resources, hindering deployment on portable devices or electric vehicles. Consequently, the most widely adopted approach in the literature, which we employ here, involves calculating a small set of statistical metrics from voltage, current, and temperature signals per cycle. These metrics serve as features for training supervised machine learning models to estimate \gls{soh} and \gls{rul}, balancing simplicity and effectiveness.
+Feature extraction is a pivotal step in estimating the \acf{soh} and \acf{rul} of lithium-ion battery cells, particularly for cells unseen by the model during training. Since \ac{soh} and \ac{rul} evolve gradually on a cycle-by-cycle basis, analyzing raw signals sample-by-sample—especially in fast-charging scenarios—is impractical due to noise and high dimensionality. Instead, aggregating information from entire charge-discharge cycles provides a more meaningful representation of battery degradation. While one could concatenate all samples from a cycle and input them directly into a machine learning model, this risks introducing collinear features and spurious correlations from irrelevant signal variations. Alternative dimensionality reduction techniques, such as \acf{pca}, \acf{pls}, or Kernel \ac{pca}, could transform cycle samples into a lower-dimensional latent space in an unsupervised manner, with the transformed data then used for supervised learning. Similarly, neural network auto-encoders, including those leveraging recurrent architectures or convolutional processing of time-series-turned-images, offer sophisticated transformations by encoding signals into compact embeddings. However, directly feeding raw signals into complex \acf{nn} models, while feasible, demands significant computational resources, hindering deployment on portable devices or electric vehicles. Consequently, the most widely adopted approach in the literature, which we employ here, involves calculating a small set of statistical metrics from voltage, current, and temperature signals per cycle. These metrics serve as features for training supervised machine learning models to estimate \ac{soh} and \ac{rul}, balancing simplicity and effectiveness.
 
 \subsection{Signals Preprocessing}
 
@@ -22,8 +22,8 @@ Post-preprocessing, the following statistical metrics were computed for each cyc
 \begin{enumerate}
     \item \textbf{Mean:} The average signal value over the cycle.
     \item \textbf{Median:} The central value when the signal is sorted by magnitude.
-    \item \textbf{Standard Deviation (\gls{std}):} A measure of signal variability.
-    \item \textbf{Interquartile Range (\gls{iqr}):} The range between the 25th and 75th percentiles, capturing the middle 50\% spread.
+    \item \textbf{\acf{std}:} A measure of signal variability.
+    \item \textbf{\acf{iqr}:} The range between the 25th and 75th percentiles, capturing the middle 50\% spread.
     \item \textbf{Kurtosis:} An indicator of the signal distribution’s tailedness.
     \item \textbf{Differential Entropy:} A measure of signal randomness, computed only for voltage due to infinite values arising in current and temperature calculations, possibly from near-constant segments or noise.
 \end{enumerate}
@@ -37,7 +37,7 @@ Despite preprocessing, some cycles exhibited outlier feature values, evident in 
 
 \begin{enumerate}
     \item \textbf{Spike removal:} For each feature per cell, a 10-cycle sliding window identified values below the 5th or above the 95th percentile, replacing them with the prior cycle’s value to eliminate spikes.
-    \item \textbf{Smoothing:} A first-order Savitzky-Golay filter with a 10-cycle window was used to dampen cycle-to-cycle oscillations, which do not reflect the gradual evolution of \gls{soh} and \gls{rul}.
+    \item \textbf{Smoothing:} A first-order Savitzky-Golay filter with a 10-cycle window was used to dampen cycle-to-cycle oscillations, which do not reflect the gradual evolution of \ac{soh} and \ac{rul}.
 \end{enumerate}
 
 The processed features, shown in \cref{fig:features_with_filter}, retain degradation trends while reducing noise and anomalies.
@@ -48,17 +48,17 @@ The processed features, shown in \cref{fig:features_with_filter}, retain degrada
 \subsection{Features Analysis}
 
 % Analyzing feature trends
-The processed feature trajectories in \cref{fig:features_with_filter} reveal distinct aging patterns. Voltage mean decreases while median increases, likely due to heightened variability (\gls{std} and \gls{iqr}) from rising internal resistance. Voltage kurtosis and differential entropy decline, possibly as extended constant voltage phases in aged cells yield more uniform signals. Current mean remains near zero, reflecting balanced charge-discharge durations, while median decreases due to prolonged constant-voltage charging with lower currents. Current \gls{std} drops as aged cells handle high currents less variably, and \gls{iqr} rises then falls, possibly tied to impedance shifts. Temperature features generally increase, driven by greater heat from internal resistance, though kurtosis shows a rise-then-fall pattern, meriting further study.
+The processed feature trajectories in \cref{fig:features_with_filter} reveal distinct aging patterns. Voltage mean decreases while median increases, likely due to heightened variability (\ac{std} and \ac{iqr}) from rising internal resistance. Voltage kurtosis and differential entropy decline, possibly as extended constant voltage phases in aged cells yield more uniform signals. Current mean remains near zero, reflecting balanced charge-discharge durations, while median decreases due to prolonged constant-voltage charging with lower currents. Current \ac{std} drops as aged cells handle high currents less variably, and \ac{iqr} rises then falls, possibly tied to impedance shifts. Temperature features generally increase, driven by greater heat from internal resistance, though kurtosis shows a rise-then-fall pattern, meriting further study.
 
 % Correlation analysis
-Pearson correlation coefficients between features and targets (\gls{soh} and \gls{rul}), shown in \cref{fig:correlation_heatmap}, highlight strong relationships, especially among voltage features, making them key candidates for modeling.
+Pearson correlation coefficients between features and targets (\ac{soh} and \ac{rul}), shown in \cref{fig:correlation_heatmap}, highlight strong relationships, especially among voltage features, making them key candidates for modeling.
 
 \insertfigure{features_extraction/correlation_heatmap}
 
 \subsection{Feature Selection}
 
 % Explaining feature selection
-Given the 16 extracted features, not all contribute equally to the estimation of \gls{soh} and \gls{rul}. Some may introduce noise or redundancy, particularly in models that lack built-in feature selection mechanisms. While bivariate correlation analysis can identify individual linear relationships with the target, it fails to capture more complex, multivariate interactions.
+Given the 16 extracted features, not all contribute equally to the estimation of \ac{soh} and \ac{rul}. Some may introduce noise or redundancy, particularly in models that lack built-in feature selection mechanisms. While bivariate correlation analysis can identify individual linear relationships with the target, it fails to capture more complex, multivariate interactions.
 
 To address this, we applied a feature selection strategy based on feature importance derived from a Random Forest model. Specifically, we used a Random Forest with 10 estimators — a lightweight yet sufficiently robust configuration that balances stability and computational efficiency. This choice helps mitigate the sensitivity of single decision trees to data splits, providing more reliable importance estimates without incurring high computational cost.
 

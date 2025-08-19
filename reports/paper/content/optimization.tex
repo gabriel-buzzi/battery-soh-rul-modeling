@@ -1,7 +1,7 @@
 \section{Model Training and Optimization}
 \label{sec:optimiation}
 % Introducing the purpose and approach
-This section describes the methodology for training and optimizing machine learning models to estimate the State of Health (\gls{soh}) and Remaining Useful Life (\gls{rul}) of lithium-ion batteries, utilizing the features extracted from the dataset detailed in prior sections. Machine learning models are mathematical frameworks that identify patterns in data to predict outcomes, here mapping cycle features to \gls{soh} or \gls{rul}. Separate models were trained for \gls{soh} and \gls{rul} to avoid the complexity of joint estimation, focusing on generalization to cells not included in the training data, a critical requirement for applications such as battery management systems in electric vehicles or energy storage.
+This section describes the methodology for training and optimizing machine learning models to estimate the \acf{soh} and \acf{rul} of lithium-ion batteries, utilizing the features extracted from the dataset detailed in prior sections. Machine learning models are mathematical frameworks that identify patterns in data to predict outcomes, here mapping cycle features to \ac{soh} or \ac{rul}. Separate models were trained for \ac{soh} and \ac{rul} to avoid the complexity of joint estimation, focusing on generalization to cells not included in the training data, a critical requirement for applications such as battery management systems in electric vehicles or energy storage.
 
 \subsection{Data Preparation}
 
@@ -25,30 +25,30 @@ To ensure models generalize to unseen cells, the dataset of 124 cells was partit
 \end{table}
 
 % Describing feature scaling
-Features were standardized using Standard Scaling, transforming each feature to have a mean of zero and a standard deviation (\gls{std}) of one, based on statistics derived from the training set. Standardization ensures that features with different scales (e.g., voltage mean in volts vs. unitless kurtosis) contribute equally to model training, preventing bias toward larger-magnitude features. The scaling parameters from the training set were applied to the test set to maintain consistency, mirroring real-world scenarios where new data are processed using established parameters.
+Features were standardized using Standard Scaling, transforming each feature to have a mean of zero and a \acf{std} of one, based on statistics derived from the training set. Standardization ensures that features with different scales (e.g., voltage mean in volts vs. unitless kurtosis) contribute equally to model training, preventing bias toward larger-magnitude features. The scaling parameters from the training set were applied to the test set to maintain consistency, mirroring real-world scenarios where new data are processed using established parameters.
 
 \subsection{Model Training and Evaluation}
 
 % Describing model training
-Model training entails optimizing internal parameters (weights) to minimize prediction errors on the training data. In this study, models learn to map cycle features (e.g., voltage mean, temperature \gls{std}) to \gls{soh} or \gls{rul}, minimizing the Mean Squared Error (\gls{mse}), which quantifies the average squared difference between predicted and actual values, penalizing larger errors more heavily. Ground truth \gls{soh} and \gls{rul} values from all cycles of the 99 training cells were utilized, leveraging the dataset’s full-life data. In practical applications, full-life data may be unavailable, necessitating alternative approaches: (1) personalized models trained on early cycles of a specific cell for its future predictions, or (2) general models trained on early cycles from multiple cells, applicable to any cell at any stage. These methods are challenging, as early-cycle data may not capture aging patterns, a significant hurdle in battery research. Given the availability of full-life data, this study uses all cycles from training cells to assess feature and model performance for unseen cells, aligning with the objective of generalization.
+Model training entails optimizing internal parameters (weights) to minimize prediction errors on the training data. In this study, models learn to map cycle features (e.g., voltage mean, temperature \ac{std}) to \ac{soh} or \ac{rul}, minimizing the \acf{mse}, which quantifies the average squared difference between predicted and actual values, penalizing larger errors more heavily. Ground truth \ac{soh} and \ac{rul} values from all cycles of the 99 training cells were utilized, leveraging the dataset’s full-life data. In practical applications, full-life data may be unavailable, necessitating alternative approaches: (1) personalized models trained on early cycles of a specific cell for its future predictions, or (2) general models trained on early cycles from multiple cells, applicable to any cell at any stage. These methods are challenging, as early-cycle data may not capture aging patterns, a significant hurdle in battery research. Given the availability of full-life data, this study uses all cycles from training cells to assess feature and model performance for unseen cells, aligning with the objective of generalization.
 
 % Describing model evaluation
-Model performance was evaluated by generating predictions for the test set (25 unseen cells) and comparing them to ground truth \gls{soh} and \gls{rul} values using three metrics:
+Model performance was evaluated by generating predictions for the test set (25 unseen cells) and comparing them to ground truth \ac{soh} and \ac{rul} values using three metrics:
 
 \begin{itemize}
-    \item \textbf{Mean Absolute Error (\gls{mae}):} The average absolute difference between predicted and actual values, expressed in the target’s units (e.g., percentage for \gls{soh}, cycles for \gls{rul}).
+    \item \textbf{\acf{mae}:} The average absolute difference between predicted and actual values, expressed in the target’s units (e.g., percentage for \ac{soh}, cycles for \ac{rul}).
     \begin{equation}
         \mathrm{MAE} = \frac{1}{n} \sum_{i=1}^{n} \left| y_i - \hat{y}_i \right|
         \label{eq:mae}    
     \end{equation}
     
-    \item \textbf{Root Mean Squared Error (\gls{rmse}):} The square root of \gls{mse}, emphasizing larger errors while maintaining the target’s units.
+    \item \textbf{\acf{rmse}:} The square root of \ac{mse}, emphasizing larger errors while maintaining the target’s units.
     \begin{equation}
         \mathrm{RMSE} = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2}
         \label{eq:rmse}
     \end{equation}
     
-    \item \textbf{Coefficient of Determination (\gls{r2}):} A metric from 0 to 1, indicating the proportion of variance in the target explained by the model, with 1 representing perfect predictions.
+    \item \textbf{\acf{r2}:} A metric from 0 to 1, indicating the proportion of variance in the target explained by the model, with 1 representing perfect predictions.
     \begin{equation}
         R^2 = 1 - \frac{\sum_{i=1}^{n} (y_i - \hat{y}_i)^2}{\sum_{i=1}^{n} (y_i - \bar{y})^2}
         \label{eq:r2}
@@ -82,7 +82,4 @@ To improve optimization efficiency and prevent unnecessary trials, an early stop
 \insertfigure{optimization/subset_distributions}
 
 % Summarizing the methodology
-This methodology leverages full-life data from training cells to develop models that generalize to unseen cells, addressing the challenges of \gls{soh} and \gls{rul} estimation. Through standardized features, multi-object optimization and hyperparameter optimization via TPE and cross-validation, the approach ensures robust predictions avoiding artificially inflated metrics due to overfitting.
-
-% \insertfigure{fig_model}
-% \inserttable{tbl_dataset}
+This methodology leverages full-life data from training cells to develop models that generalize to unseen cells, addressing the challenges of \ac{soh} and \ac{rul} estimation. Through standardized features, multi-object optimization and hyperparameter optimization via TPE and cross-validation, the approach ensures robust predictions avoiding artificially inflated metrics due to overfitting.
