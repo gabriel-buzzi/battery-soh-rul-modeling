@@ -1,10 +1,10 @@
 \subsection{Machine Learning Models}
 
-In this study, we evaluated four machine learning regression models on our dataset to predict the target variable. The models include the Tweedie Regressor, K-Nearest Neighbors (KNN) Regressor, Extra Trees Regressor, and LightGBM Regressor. Each model was trained and tested using standard cross-validation techniques to ensure robustness. Below, we describe each model and its mathematical formulation.
+In this study, we evaluated four machine learning regression models on our dataset to predict the target variable: the Tweedie Regressor \citep{tweedie1984index,jorgensen1997theory}, K-Nearest Neighbors (KNN) Regressor \citep{fix1951discriminatory,hastie2009elements}, Extra Trees Regressor \citep{geurts2006extremely}, and LightGBM Regressor \citep{ke2017lightgbm}. Each model was trained and tested using standard cross-validation techniques to ensure robustness. In the following, we describe each model and its mathematical formulation.
 
 \subsubsection{Tweedie Regressor}
 
-The Tweedie Regressor is a generalized linear model tailored for response variables following a Tweedie distribution, suitable for datasets with zero-inflated or positively skewed data (e.g., insurance claims or rainfall). It models the expected value of the response variable \( y \) given features \( \mathbf{x} \) as:
+The Tweedie Regressor is a generalized linear model tailored for response variables following a Tweedie distribution \citep{tweedie1984index,jorgensen1997theory}, ideal for non-negative, continuous data that may include a mass at zero, because it generalizes distributions like Poisson, gamma, and compound Poisson–gamma. Although the \ac{soh} distribution does not strictly follow a Tweedie distribution, we include Tweedie regression as a comparative model to evaluate its performance relative to other regression approaches, exploring its flexibility and robustness under different data distributions. It models the expected value of the response variable \( y \) given features \( \mathbf{x} \) as:
 
 \[
 \mu(\mathbf{x}) = \exp(\mathbf{x}^T \boldsymbol{\beta}),
@@ -20,7 +20,7 @@ with \( p \) (where \( 1 < p < 2 \)) controlling the Tweedie distribution's vari
 
 \subsubsection{K-Nearest Neighbors (KNN) Regressor}
 
-The KNN Regressor predicts the target value for a test instance \( \mathbf{x} \) by averaging the target values of its \( k \) nearest neighbors in the feature space:
+The KNN Regressor \citep{fix1951discriminatory,hastie2009elements} predicts the target value for a test instance \( \mathbf{x} \) by averaging the target values of its \( k \) nearest neighbors in the feature space:
 
 \[
 \hat{y}(\mathbf{x}) = \frac{1}{k} \sum_{\mathbf{x}_i \in \mathcal{N}_k(\mathbf{x})} y_i,
@@ -30,7 +30,7 @@ where \( \mathcal{N}_k(\mathbf{x}) \) is the set of \( k \) nearest neighbors ba
 
 \subsubsection{Extra Trees Regressor}
 
-The Extra Trees Regressor is an ensemble method that constructs multiple decision trees with randomized splits and aggregates their predictions. For a test instance \( \mathbf{x} \), the prediction is:
+The Extra Trees Regressor \citep{geurts2006extremely} is an ensemble method that constructs multiple decision trees with randomized splits and aggregates their predictions. For a test instance \( \mathbf{x} \), the prediction is:
 
 \[
 \hat{y}(\mathbf{x}) = \frac{1}{T} \sum_{t=1}^T h_t(\mathbf{x}),
@@ -40,7 +40,7 @@ where \( T \) is the number of trees, and \( h_t(\mathbf{x}) \) is the predictio
 
 \subsubsection{LightGBM Regressor}
 
-The LightGBM Regressor is a gradient boosting framework that constructs an additive model of weak learners (decision trees):
+The LightGBM Regressor \citep{ke2017lightgbm} is a gradient boosting framework that constructs an additive model of weak learners (decision trees):
 
 \[
 \hat{y}(\mathbf{x}) = \sum_{m=1}^M f_m(\mathbf{x}),

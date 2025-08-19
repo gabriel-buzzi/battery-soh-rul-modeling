@@ -2,17 +2,17 @@
 
 The development of machine learning models for battery prognosis requires clearly defined target variables, namely \acf{soh} and \acf{rul} These metrics serve as key performance indicators to quantify the degradation state of a battery. The following section outlines the methodology used to calculate these ground-truth labels from the experimental cycling data.
 
-\ac{soh} provides a snapshot of a battery's current condition relative to its initial, "healthy" state. It is typically expressed as a percentage of the nominal capacity. For the purpose of this study, the \ac{soh} for the nth cycle, denoted as $SoH_n$, is calculated as the ratio of the maximum discharge capacity observed during that cycle to the rated cell capacity, as shown in \cref{eq:soh}.
+The \ac{soh} of a battery provides a snapshot of its current condition relative to its initial, "healthy" state. It is typically expressed as a percentage of the nominal capacity. For the purpose of this study, the \ac{soh} for the nth cycle, denoted as $SoH_n$, is calculated as the ratio of the maximum discharge capacity observed during that cycle to the rated cell capacity, as shown in \cref{eq:soh}.
 
 \begin{equation}
-    SoH_n = \frac{C_{n}}{C_{rated}} \label{eq:soh}
+    SoH_n = \frac{Q_{n}}{Q_{rated}} \label{eq:soh}
 \end{equation}
 
-where $C_n$ is the maximum discharge capacity recorded for the nth cycle, and C rated is the rated capacity of a new cell.
+where $Q_n$ is the maximum discharge capacity recorded for the nth cycle, and $Q_rated$ is the rated capacity of a new cell.
 
-A critical limitation in determining the ground-truth SoH in real-world applications is that batteries rarely undergo a full charge or discharge cycle. This makes it challenging to accurately measure the true capacity at any given time. The controlled laboratory setting used to generate this dataset, where full cycles are performed, provides a consistent and reliable method for calculating this critical ground truth.
+A critical limitation in determining the ground-truth \ac{soh} in real-world applications is that batteries rarely undergo a full charge or discharge cycle. This makes it challenging to accurately measure the true capacity at any given time. The controlled laboratory setting used to generate this dataset, where full cycles are performed, provides a consistent and reliable method for calculating this critical ground truth.
 
-\ac{rul} represents the number of cycles a battery can endure before it reaches its \ac{eol} condition. \ac{eol} is a predefined failure threshold, commonly set when the battery's capacity drops to 80\% of its initial rated capacity. The \ac{eol} cycle, is therefore defined as the cycle number at which the \ac{soh} first falls to 80\% or below.
+The \ac{rul} of a battery represents the number of cycles it can endure before reaching its \ac{eol} condition. The \ac{eol} is a predefined failure threshold, commonly set when the battery's capacity drops to 80\% of its initial rated capacity. The \ac{eol} cycle is therefore defined as the cycle number at which the \ac{soh} first falls to 80\% or below.
 
 $$ EoL = \min { n \mid SoH_n \le 0.80 } $$
 
