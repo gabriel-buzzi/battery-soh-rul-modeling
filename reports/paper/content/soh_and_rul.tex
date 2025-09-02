@@ -5,7 +5,8 @@ The development of machine learning models for battery prognosis requires clearl
 The \ac{soh} of a battery provides a snapshot of its current condition relative to its initial, "healthy" state. It is typically expressed as a percentage of the nominal capacity. For the purpose of this study, the \ac{soh} for the nth cycle, denoted as $SoH_n$, is calculated as the ratio of the maximum discharge capacity observed during that cycle to the rated cell capacity, as shown in \cref{eq:soh}.
 
 \begin{equation}
-    SoH_n = \frac{Q_{n}}{Q_{rated}} \label{eq:soh}
+    \mathrm{SoH}_n = \frac{Q_n}{Q_{\text{rated}}}
+    \label{eq:soh}
 \end{equation}
 
 where $Q_n$ is the maximum discharge capacity recorded for the nth cycle, and $Q_rated$ is the rated capacity of a new cell.
@@ -14,12 +15,16 @@ A critical limitation in determining the ground-truth \ac{soh} in real-world app
 
 The \ac{rul} of a battery represents the number of cycles it can endure before reaching its \ac{eol} condition. The \ac{eol} is a predefined failure threshold, commonly set when the battery's capacity drops to 80\% of its initial rated capacity. The \ac{eol} cycle is therefore defined as the cycle number at which the \ac{soh} first falls to 80\% or below.
 
-$$ EoL = \min { n \mid SoH_n \le 0.80 } $$
+\begin{equation}
+    \mathrm{EoL} = \min \left\{ n \;\middle|\; \mathrm{SoH}_n \leq 0.80 \right\}
+    \label{eq:eol}
+\end{equation}
 
-The \ac{rul} for any given cycle n, denoted as $RUL_n$, is then calculated by subtracting the current cycle number from the \ac{eol} cycle number, as expressed in \cref{eq:rul}.
+The \ac{rul} for any given cycle n, denoted as $RUL_n$, is then calculated by subtracting the current cycle number from the \ac{eol} cycle number, as expressed in \cref{eq:rul} below.
 
 \begin{equation}
-    RUL_n = EoL - n \label{eq:rul} 
+    \mathrm{RUL}_n = \mathrm{EoL} - n
+    \label{eq:rul}
 \end{equation}
 
 A significant challenge associated with using cycle count to define \ac{rul} is its limited applicability to real-world scenarios, where usage is often irregular and does not consist of discrete, well-defined cycles. Furthermore, determining the ground truth \ac{rul} for a particular cycle requires having the full degradation data up to the battery's \ac{eol}, which is a common limitation when training \ac{rul} prediction models from incomplete datasets.

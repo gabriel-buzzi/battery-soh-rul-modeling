@@ -21,7 +21,7 @@
 % \newglossaryentry{rmse}{name=RMSE, description={Root Mean Squared Error, the square root of the mean squared error, providing a measure of prediction error in the same units as the target}}
 % \newglossaryentry{r2}{name=R2, description={Coefficient of Determination, a metric indicating how well a model explains the variability of the target variable, ranging from 0 to 1}}
 
-\title{Machine Learning Techniques for Li-ion Battery State-of-Health and Remaining Useful Life Estimation}
+\title{Lightweight Single-Cycle Prognostics for Li-ion Batteries: Feature Extraction and Cross-Cell Generalization}
 \author{Gabriel Buzzi Sanches \\
 \small Universidade Estadual de Campinas \\
 \small \texttt{gabrielbuzzi2@gmail.com}}
@@ -30,18 +30,24 @@
 \maketitle
 
 \begin{abstract}
-    Your abstract goes here.
+    This paper proposes a single-cycle, feature-based approach for estimating the \acf{soh} and \acf{rul} of lithium-ion batteries. Using the public Severson LFP dataset (124 cells), we extract 16 statistical features from voltage, current, and temperature signals of a diagnostic full cycle. Gradient boosting and random forest regressors are trained with cell-wise cross-validation and tested on 25 unseen cells. Results show a median RMSE of 0.7--0.8\% for SoH~\cref{tab:soh_metrics} and 42--60 cycles for RUL~\cref{tab:rul_metrics}, with consistent generalization across batches. Our analysis highlights the most informative features, the trade-off between feature count and accuracy, and the deployment potential of lightweight models. Limitations include the single chemistry and the need for diagnostic cycles, which future work will address.
+
+    \noindent \textbf{Keywords:} battery prognostics; state of health; remaining useful life; feature engineering; LFP; gradient boosting
 \end{abstract}
 
+
+
 \input{content/introduction}
+\input{content/related_work}
 \input{content/dataset}
 \input{content/soh_and_rul}
 \input{content/data_analysis}
 \input{content/feature_extraction}
 \input{content/models}
 \input{content/optimization}
-% \input{content/results}
-% \input{content/conclusion}
+\input{content/results}
+\input{content/conclusion}
+\input{content/appendix}
 
 \printacronyms[name=List of Acronyms]
 

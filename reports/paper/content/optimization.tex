@@ -64,9 +64,9 @@ Machine learning models rely on hyperparameters—configurable settings that def
 
 To balance predictive accuracy and model generalization, a custom cost function was adopted, combining validation error and the generalization gap. The objective to minimize is defined as:
 
-\[
-\text{Loss} = \text{RMSE}_{\text{val}} + \frac{|\text{RMSE}_{\text{train}} - \text{RMSE}_{\text{val}}|}{\text{RMSE}_{\text{val}}}
-\]
+\begin{equation}
+    \mathcal{L} = \mathrm{RMSE}_{\text{val}} + \frac{\left| \mathrm{RMSE}_{\text{train}} - \mathrm{RMSE}_{\text{val}} \right|}{\mathrm{RMSE}_{\text{val}}}
+\end{equation}
 
 where \(\text{RMSE}_{\text{val}}\) is the root mean square error on the validation folds, as defined by \cref{eq:rmse}, and the second term, \(\frac{|\text{RMSE}_{\text{train}} - \text{RMSE}_{\text{val}}|}{\text{RMSE}_{\text{val}}}\), represents the relative generalization gap between training and validation errors. This formulation penalizes both high validation errors and large discrepancies between training and validation performance, effectively discouraging overfitting while prioritizing predictive accuracy.
 
