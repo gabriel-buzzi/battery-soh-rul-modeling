@@ -77,4 +77,4 @@ PYTHONPATH = "./src"
 PROJECT_NAME = "severson_features_soh_rul"
 
 [tool.pixi.tasks]
-register-kernel = { cmd = 'python -m ipykernel install --user --name pixi-${PROJECT_NAME} --display-name "Pixi (${PROJECT_NAME})"' }
+register-kernel = { cmd = 'python -m ipykernel install --user --name pixi-$PROJECT_NAME --display-name "Pixi ($PROJECT_NAME)"' }
