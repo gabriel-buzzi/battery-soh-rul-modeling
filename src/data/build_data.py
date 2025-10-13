@@ -190,29 +190,41 @@ def _process_cells_data(cfg: DictConfig, cells_data: h5py.File) -> None:
                 )
                 continue
 
-            freq = cfg["data"]["target_frequency"]
-            interp_time = np.arange(0, time[-1], 1 / freq)
+            if cfg["data"]["interpolate"]:
+                freq = cfg["data"]["target_frequency"]
+                interp_time = np.arange(0, time[-1], 1 / freq)
 
-            interp_voltage = np.interp(interp_time, time, voltage)
-            interp_current = np.interp(interp_time, time, current)
-            interp_temperature = np.interp(interp_time, time, temperature)
-            interp_charge_capacity = np.interp(
-                interp_time, time, charge_capacity
-            )
-            interp_discharge_capacity = np.interp(
-                interp_time, time, discharge_capacity
-            )
+                interp_voltage = np.interp(interp_time, time, voltage)
+                interp_current = np.interp(interp_time, time, current)
+                interp_temperature = np.interp(interp_time, time, temperature)
+                interp_charge_capacity = np.interp(
+                    interp_time, time, charge_capacity
+                )
+                interp_discharge_capacity = np.interp(
+                    interp_time, time, discharge_capacity
+                )
 
-            cycle_df = pd.DataFrame(
-                {
-                    "t": interp_time,
-                    "V": interp_voltage,
-                    "I": interp_current,
-                    "T": interp_temperature,
-                    "Qc": interp_charge_capacity,
-                    "Qd": interp_discharge_capacity,
-                }
-            )
+                cycle_df = pd.DataFrame(
+                    {
+                        "t": interp_time,
+                        "V": interp_voltage,
+                        "I": interp_current,
+                        "T": interp_temperature,
+                        "Qc": interp_charge_capacity,
+                        "Qd": interp_discharge_capacity,
+                    }
+                )
+            else:
+                cycle_df = pd.DataFrame(
+                    {
+                        "t": time,
+                        "V": voltage,
+                        "I": current,
+                        "T": temperature,
+                        "Qc": charge_capacity,
+                        "Qd": discharge_capacity,
+                    }
+                )
 
             cycle_df["cell"] = cell_id
             cycle_df["cycle"] = cycle_id  # Use extracted cycle number
