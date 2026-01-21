@@ -6,25 +6,25 @@ The temporal behavior of voltage, current, and temperature during a representati
 The temperature profile, shown in \cref{fig:voltage_current_temperature}(c), reveals peaks during both charging and discharging, with the rate of temperature increase correlating with current intensity. During the rest period, the temperature drops, and during the 1C CC charging phase, it stabilizes, likely due to balanced heat generation and dissipation in the 30 °C chamber. This pattern is consistent with the discharge phase, where temperature rises with applied current and stabilizes during CV discharge. Although the observed correlation between temperature and the integral of current (i.e., capacity exchange) highlights that temperature can serve as a useful indicator of \ac{soc}, it should be noted that this relation partly reflects the specific experimental conditions—namely constant charge/discharge profiles under controlled ambient temperature—and may not generalize to all operating scenarios.
 
 
-\insertfigure{data_analysis/voltage_current_temperature}
-\insertfigure{data_analysis/temperature_and_capacities}
+\insertfigure{data_analysis_voltage_current_temperature}
+\insertfigure{data_analysis_temperature_and_capacities}
 
 The evolution of \ac{soh} across the cells' lifecycle, as defined in the dataset description, is depicted in \cref{fig:all_cell_soh}. Most cells start with an \ac{soh} near 100\% and exhibit a gradual decline until a characteristic "knee point", after which the degradation rate accelerates. This behavior is consistent across all batches, despite variations in rest periods and cutoff currents. The cycle life distribution, shown in \cref{fig:cycle_life_distribution}, indicates that most cells reach \acf{eol} around 700 cycles, lower than typical for 1.1 Ah LFP cells, likely due to the aggressive 4C discharge and full DoD protocols described earlier. As noted in the dataset limitations, this accelerated aging may not reflect real-world conditions. An anomaly around cycle 250 in Batch 2, caused by an 8-hour rest period due to a computer restart, manifests as capacity spikes, introducing outliers in voltage, current, and temperature measurements. These outliers are removed during data preprocessing to ensure robust model training.
 
-\insertfigure{data_analysis/all_cell_soh}
-\insertfigure{data_analysis/cycle_life_distribution}
+\insertfigure{data_analysis_all_cell_soh}
+\insertfigure{data_analysis_cycle_life_distribution}
 
 The impact of aging on voltage and current profiles is examined in \cref{fig:voltage_current_begin_and_end}, which compares these signals at the beginning, middle, and end the life of the 32nd cell from Batch 2 as an example. At the start (\cref{fig:voltage_current_begin_and_end}(a)), the profiles align with the defined fast-charge protocol. By mid-life (\cref{fig:voltage_current_begin_and_end}(b)), changes are subtle, but at EoL (\cref{fig:voltage_current_begin_and_end}(c)), increased internal resistance, measured as described in the dataset, causes the 3.6 V and 2.2 V thresholds to be reached earlier, leading to extended CV phases with reduced current. This results in shorter cycle durations at EoL, reflecting the reduced capacity observed post-knee point in \cref{fig:all_cell_soh}.
 
-\insertfigure{data_analysis/voltage_current_begin_and_end}
+\insertfigure{data_analysis_voltage_current_begin_and_end}
 
 A detailed visualization of the fast-charge protocol is provided in \cref{fig:charge_steps}, with color-coded regions highlighting the CC1, CC2, CC3, CV charge, discharge, and rest periods, as described in the experimental setup. For Batch 2, the protocol includes a 5-minute rest after 80\% \ac{soc} and post-discharge, with C/50 cutoff currents for CV phases. This structured protocol ensures consistency across cycles, facilitating the analysis of aging effects.
 
-\insertfigure{data_analysis/charge_steps}
+\insertfigure{data_analysis_charge_steps}
 
 The evolution of voltage, current, and temperature across multiple cycles is shown in \cref{fig:signals_through_cycles}, using a Batch 2 cell as an example. The most significant changes occur near EoL (cycle 501), where increased internal resistance, as measured at 80\% \ac{soc}, leads to earlier CV phases and higher peak temperatures during discharge, likely due to enhanced Joule heating. This aligns with the dataset’s observation of thermocouple variability, which may amplify temperature measurement noise at \ac{eol}.
 
-\insertfigure{data_analysis/signals_through_cycles}
+\insertfigure{data_analysis_signals_through_cycles}
 
 To assess the impact of fast-charge protocols on cycle life, a correlation analysis was performed across the dataset's range of one-step and two-step policies. \Cref{fig:charge_current_and_cycle_life} shows a scatter plot of the mean charge C-rate versus cycle life. The mean C-rate, $\overline{C}$, is defined as the weighted average of the constant-current (CC) steps up to 80\% \ac{soc}:
 
@@ -35,7 +35,7 @@ To assess the impact of fast-charge protocols on cycle life, a correlation analy
 where $C_i$ is the C-rate of the $i$-th step and $\Delta \mathrm{SOC}_i$ is the fraction of state of charge (SOC) covered by that step. For example, a 4C(50\%)-5C protocol yields $\overline{C} = (4 \times 0.5 + 5 \times 0.3)/0.8$. A Pearson correlation coefficient of $R = -0.61$ indicates a moderate negative correlation, confirming that higher charge currents, as applied across all batches, accelerate aging, consistent with the dataset's high C-rate conditions.
 
 
-\insertfigure{data_analysis/charge_current_and_cycle_life}
+\insertfigure{data_analysis_charge_current_and_cycle_life}
 
 Further analysis in \cref{fig:charge_steps_area_diff} evaluates the difference in charge "area" between the second and first constant-current (CC) steps. The goal of this analysis is to assess how different current intensities applied at different \acp{soc} influence battery life. The area difference, $\Delta A$, is defined as
 
@@ -45,6 +45,6 @@ Further analysis in \cref{fig:charge_steps_area_diff} evaluates the difference i
 
 where $C_1$ and $C_2$ are the C-rates of the first and second steps, respectively, and $\Delta \mathrm{SOC}_1$ and $\Delta \mathrm{SOC}_2$ are the corresponding fractions of state of charge (SOC) covered. For example, a 4C(50\%)-3C protocol yields $\Delta A = 3 \times 0.3 - 4 \times 0.5$. A Pearson correlation coefficient of $R = 0.38$ indicates a weak positive correlation, suggesting that the order and duration of fast-charge steps have minimal impact on cycle life compared to the overall charge current magnitude.
 
-\insertfigure{data_analysis/charge_steps_area_diff}
+\insertfigure{data_analysis_charge_steps_area_diff}
 
 In summary, the exploratory data analysis, grounded in the dataset’s detailed measurements and experimental conditions, reveals key trends in \ac{lfp} battery behavior under fast-charging protocols. Temperature strongly correlates with capacity exchange, supporting its use as an \ac{soc} indicator, though measurement reliability is limited by thermocouple inconsistencies. \ac{soh} degradation accelerates post-knee point, with cycle life averaging 700 cycles due to aggressive testing conditions, as noted in the dataset limitations. Aging significantly alters voltage and current profiles, with increased internal resistance driving earlier CV phases and shorter cycles at \ac{eol}. Correlation analyses confirm that higher charge currents reduce cycle life, while step order has minimal impact. These findings, despite the dataset’s constraints (e.g., single chemistry, controlled environment), provide a robust foundation for developing machine learning models to predict \ac{rul} and \ac{soh}, leveraging the observed relationships between measurable signals and degradation patterns.

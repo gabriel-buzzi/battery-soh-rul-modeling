@@ -1,0 +1,31 @@
+\section{Results: Optimization Phase}
+
+\subsection{Hyperparameter Optimization Performance}
+
+The \cref{tab:soh_optim,tab:rul_optim} below show the results of the optimization process for both \acf{soh} and \acf{rul}, respectively. It can be seen that the models produced good values of validation \acf{rmse}, which is the average of the \ac{rmse} on each fold of cross validation, while maintaining low relative gaps which is a good indicative of non-overfitting models. For \ac{rul} models, although it was harder to keep the relative gap values low, which indicates models for that target with the features extracted on this work are more prone to overfitting the training data.
+
+\inserttable{soh_optim}
+\inserttable{rul_optim}
+
+The hyperparameter optimization process successfully identified optimal configurations for all machine learning models across both \ac{soh} and \ac{rul} prediction tasks. \cref{tab:soh_optim,tab:rul_optim} present the cross-validation performance metrics obtained during the optimization phase, revealing distinct patterns in model behavior and generalization capabilities.
+
+For \ac{soh} prediction (\cref{tab:soh_optim}), the LGBMRegressor demonstrated superior performance with the lowest validation \ac{rmse} of 0.94\% when utilizing all 16 features, while maintaining a moderate relative gap of 0.44. This indicates a balanced trade-off between predictive accuracy and overfitting resistance. The ExtraTreesRegressor achieved comparable performance with a validation \ac{rmse} of 1.07\% and notably lower relative gap of 0.27, suggesting better generalization properties. The TweedieRegressor, while exhibiting excellent generalization characteristics ($relative gaps \leq 0.06$), showed substantially higher validation errors, indicating insufficient model complexity for capturing the underlying \ac{soh} patterns.
+
+\ac{rul} prediction (\cref{tab:rul_optim}) proved more challenging, with all models exhibiting higher relative gaps compared to \ac{soh} estimation, suggesting increased susceptibility to overfitting. The ExtraTreesRegressor achieved the best validation performance with an \ac{rmse} of 103.64 cycles using 16 features, though with a concerning relative gap of 0.70. The LGBMRegressor, despite lower training error (18.51 cycles), showed an even larger relative gap of 0.83, indicating significant overfitting tendencies. The TweedieRegressor again demonstrated perfect generalization ($relative gap \approx 0.00$) but at the cost of substantially higher prediction errors.
+
+\subsection{Optimal Hyperparameters}
+
+The \cref{tab:soh_hyperparams,tab:rul_hyperparams} show the optimal values of the hyperparameters for \ac{soh} and \ac{rul}, respectively. 
+
+\inserttable{soh_hyperparams}
+\inserttable{rul_hyperparams}
+
+The optimal hyperparameters (\cref{tab:soh_hyperparams,tab:rul_hyperparams}) reveal consistent patterns that provide insights into the underlying data characteristics and model requirements. For tree-based methods, the optimal configurations favored relatively shallow trees ($max\_depth \leq 10$) and small leaf sizes ($min\_samples\_leaf \leq 4$), suggesting that the battery aging patterns can be captured without excessive model complexity. The LGBMRegressor consistently selected low learning rates (0.007--0.11) paired with moderate numbers of estimators (400--661), indicating a preference for gradual learning to avoid overfitting.
+
+Interestingly, the KNeighborsRegressor optimal configurations showed preference for relatively large neighborhood sizes (n\_neighbors = 21--35) and uniform weighting, suggesting that local averaging over substantial regions of the feature space is beneficial for battery prognostics. The consistent selection of Manhattan distance ($p=1$) over Euclidean distance ($p=2$) for most configurations may indicate that the standardized features exhibit more meaningful relationships under L1 norm.
+
+\subsection{Impact of Feature Reduction}
+
+The transition from 16 to 4 features resulted in predictable but manageable performance degradation across all models. For \ac{soh} prediction, validation \ac{rmse} increased by 20--30\% for tree-based methods (LGBMRegressor: $0.94\% \rightarrow 1.22\%$, ExtraTreesRegressor: $1.07\% \rightarrow 1.40\%$), while simultaneously reducing overfitting tendencies as evidenced by decreased relative gaps. This trade-off suggests that the four most important features capture the majority of \ac{soh}-relevant information, with additional features contributing primarily to model complexity rather than fundamental predictive power.
+
+The feature reduction impact on \ac{rul} prediction was less pronounced, with validation \ac{rmse} changes typically within 10\% (ExtraTreesRegressor: $103.64 \rightarrow 110.00 cycles$). Notably, the reduced feature set generally improved generalization capabilities, with several models showing decreased relative gaps. This pattern indicates that \ac{rul} prediction may be more robust to feature dimensionality reduction, possibly due to the inherent noise in cycle-life estimation making additional features less beneficial.

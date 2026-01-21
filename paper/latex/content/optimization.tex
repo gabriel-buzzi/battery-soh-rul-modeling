@@ -76,10 +76,10 @@ Trials were evaluated using 5-fold Group K-Fold cross-validation. The 99 trainin
 % Detailing early stopping strategy
 To improve optimization efficiency and prevent unnecessary trials, an early stopping strategy was employed. If the cost does not improve for a fixed number of consecutive trials (patience = 10), the optimization process is halted. This ensures that exploration ceases when no meaningful improvement is observed.
 
-\insertfigure{optimization/kfold}
+\insertfigure{optimization_kfold}
 
 % Data subset for optimization
-\insertfigure{optimization/subset_distributions}
+\insertfigure{optimization_subset_distributions}
 
 % Summarizing the methodology
 This methodology leverages full-life data from training cells to develop models that generalize to unseen cells, addressing the challenges of \ac{soh} and \ac{rul} estimation. Through standardized features, multi-object optimization and hyperparameter optimization via TPE and cross-validation, the approach ensures robust predictions avoiding artificially inflated metrics due to overfitting.

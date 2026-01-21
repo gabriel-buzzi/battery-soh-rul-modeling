@@ -1,0 +1,41 @@
+\section{Results: Test Set Evaluation}
+
+\subsection{Test Metrics and Performance}
+
+The results of each model type using the optimal hyperparameter set are shown on \cref{tab:soh_metrics,tab:rul_metrics} for \ac{soh} and \ac{rul}, respectively. The performance drop between using 16 and 4 features were relatively low indicating models with only the most important features identified by the Tree-based ensemble described on \cref{sec:feature_extraction} is feasible.
+
+The overall performance of all models is satisfactory with \ac{rmse} values below 0.80\% for \ac{soh} using a LGBMRegressor for 75\% of the test cells and below 59.91 for \ac{rul} using an ExtraTreesRegressor for 75\% of the test cells. \ac{r2} values for 75\% of the test cells were above 0.97 and 0.96 for \ac{soh} and \ac{rul}, respectively, indicating high accordance between the models' estimations and reference values.
+
+\inserttable{soh_metrics}
+\inserttable{rul_metrics}
+
+\subsection{Model Validation and Prediction Analysis}
+
+\cref{fig:best_16_soh_model,fig:best_16_rul_model,fig:best_4_soh_model,fig:best_4_rul_model} below show in detail the scatter plots of all reference vs. estimated values of all test cells for the best model in each case: \ac{soh} and \ac{rul} and using all 16 features and only 4 features. 
+
+\insertfigure{results_best_16_soh_model}
+\insertfigure{results_best_4_soh_model}
+\insertfigure{results_best_16_rul_model}
+\insertfigure{results_best_4_rul_model}
+
+It can be confirmed that the model works really well for most data while some points are more distant from the ideal fit line. For \ac{soh} models, predictions show both under- and over-estimation patterns with a balanced distribution around the ideal fit line. In contrast, \ac{rul} models exhibit a tendency toward under-estimation, particularly evident in the high-cycle region where one test cell with approximately 2000 cycles consistently deviates from the ideal regression line. This divergence likely stems from the scarcity of such long-lived cells in the training dataset, highlighting a limitation in model generalization to extreme cycle-life scenarios.
+
+For the \ac{rul} models with 16 and 4 features it can be noticed that a similar set of points diverge from the ideal regression line. We identified that these points correspond to the same cell of the test set. From the plot it can be seen that this cell is the only one with almost 2000 cycles cycle life, and this divergence of the model might be happening because data with \ac{rul} values that high are more scarce on the training set as well due to the fact few cells cycle that long on the dataset used.
+
+\subsection{Test Set Performance and Model Validation}
+
+The test set results (\cref{tab:soh_metrics,tab:rul_metrics}) demonstrate that the optimized models successfully generalize to unseen cells, with performance metrics closely matching the cross-validation estimates. For \ac{soh} prediction, the LGBMRegressor achieved an \ac{rmse} below 0.80\% for 75\% of test cells, with \acf{r2} values above 0.97, indicating high accordance between model estimations and reference values. Similarly, for \ac{rul} prediction, the ExtraTreesRegressor maintained \ac{rmse} values below 59.91 cycles for 75\% of test cells, with \ac{r2} values above 0.96.
+
+\subsection{Model-Specific Performance Characteristics}
+
+The superior performance of tree-based ensemble methods (LGBMRegressor and ExtraTreesRegressor) aligns with their inherent ability to capture non-linear relationships and feature interactions without explicit modeling. Battery aging involves complex, non-linear degradation mechanisms that these methods can naturally accommodate. The gradient boosting approach of LGBMRegressor appears particularly well-suited for \ac{soh} estimation, where sequential refinement of predictions can effectively model the gradual capacity fade patterns.
+
+The consistently poor performance of TweedieRegressor, despite its excellent generalization properties, suggests that linear models---even with flexible error distributions---are insufficient for capturing the complexity of battery degradation patterns encoded in the extracted features. This finding reinforces the necessity of non-linear modeling approaches for battery prognostics applications.
+
+\subsection{Practical Implications and Deployment Considerations}
+
+From a practical battery management perspective, the results demonstrate that effective \ac{soh} and \ac{rul} estimation can be achieved using a minimal feature set derived from single charge-discharge cycles sampled at 1~Hz or higher. The 4-feature models, while showing modest performance reduction, offer significant computational advantages for embedded applications where processing power and memory are constrained.
+
+However, a critical limitation for real-world deployment concerns data availability. The feature extraction methodology requires complete constant current constant voltage (CCCV) charge-discharge cycle data, which may not be readily available during normal battery operation in applications such as electric vehicles or grid energy storage systems. Such complete cycling data would typically only be obtainable during dedicated diagnostic procedures with the load disconnected from the battery, limiting the frequency of prognostic updates and potentially compromising the timeliness of health assessments. This constraint necessitates careful consideration of diagnostic scheduling and may require development of alternative feature extraction methods that can operate on partial cycle data or operational load profiles.
+
+Despite this limitation, the observed performance characteristics suggest different deployment strategies for \ac{soh} and \ac{rul} estimation. \ac{soh} models demonstrate robust performance across the full range of battery conditions, making them suitable for periodic diagnostic monitoring applications. \ac{rul} models, while showing excellent performance for typical battery lifespans, may require additional training data or specialized handling for batteries exhibiting exceptional longevity, and their deployment would be similarly constrained by the need for complete cycle data.

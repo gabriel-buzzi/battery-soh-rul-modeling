@@ -1,3 +1,20 @@
+\documentclass[11pt]{article}
+
+\input{../latex/preamble}
+
+% load acronyms from external file
+\input{../latex/acronyms}
+
+\begin{document}
+
+\title{Supplementary Material: Lightweight Single-Cycle Prognostics for Li-ion Batteries}
+\author{Gabriel Buzzi Sanches, Carlos Antônio Rufino Junior, Lucas Saraiva Texeira, Hudson Zanin \\
+\small Universidade Estadual de Campinas \\
+\small \texttt{gabrielbuzzi2@gmail.com}}
+\date{\today}
+
+\maketitle
+
 \appendix
 \section{Batch Descriptions}
 
@@ -16,3 +33,19 @@ The dataset, while robust for controlled experimental analysis, presents several
 Additionally, the dataset is constrained by its focus on a single battery chemistry (LFP/graphite) from a single manufacturer, which restricts the generalizability of machine learning models to other battery types, such as nickel manganese cobalt (NMC) or nickel cobalt aluminum oxide (NCA) chemistries, that are prevalent in various applications. The experiments were conducted at a fixed temperature of 30°C, which does not capture the impact of temperature variations commonly encountered in real-world scenarios, such as extreme heat or cold, which significantly influence battery degradation rates. The emphasis on fast-charging protocols, while valuable for studying high-rate performance, may not adequately represent slower charging scenarios or dynamic load profiles typical in practical applications, potentially limiting the models' ability to predict RUL and SOH under diverse operating conditions. Furthermore, the inconsistencies in temperature measurements due to unreliable thermocouple contacts and the presence of experimental irregularities (e.g., computer restarts, missing data, and noisy voltage profiles) introduce noise and gaps in the data, which may challenge the robustness of machine learning models, particularly those relying on precise temporal or thermal features for accurate predictions.
 
 This dataset provides a robust foundation for applying machine learning techniques to estimate \ac{soh} and \ac{rul}, capturing a range of fast-charging conditions and their impacts on battery degradation, but its limitations necessitate careful consideration when extending models to real-world applications.
+
+\section{Limitations and Future Research Directions}
+
+Several limitations must be acknowledged in the current optimization approach. The use of a 10\% subset (\cref{fig:subset_distributions}) for hyperparameter optimization, while computationally efficient, may not fully capture the complete data distribution complexity. Additionally, the focus on full-life training data, while comprehensive for model evaluation, may not reflect real-world scenarios where models must perform early-life predictions with limited degradation history.
+
+A fundamental limitation lies in the requirement for complete CCCV cycle data for feature extraction. This dependency significantly restricts the practical applicability of the developed models, as such data is typically unavailable during normal battery operation and can only be obtained during scheduled diagnostic procedures. Future research should prioritize the development of feature extraction methods that can operate on partial cycle data, operational load profiles, or other readily available signals to enable continuous prognostic monitoring without service interruption.
+
+The identified overfitting tendencies, particularly for \ac{rul} prediction, highlight the need for regularization strategies beyond hyperparameter optimization. Future work should investigate ensemble approaches that combine multiple models or incorporate physics-informed constraints to improve generalization while maintaining predictive accuracy. The development of hybrid models that combine the generalization properties of simpler methods with the predictive power of complex ensemble approaches could address the observed overfitting issues.
+
+The consistent challenges observed in \ac{rul} prediction across all models indicate a need for alternative problem formulations, such as classification-based approaches that predict remaining life ranges rather than precise cycle counts, or multi-task learning frameworks that jointly optimize \ac{soh} and \ac{rul} estimation to leverage their inherent relationships. Additionally, investigating domain-specific regularization techniques that incorporate known battery aging physics could improve model robustness and reduce the sensitivity to training data distribution variations.
+
+\printacronyms[name=List of Acronyms]
+
+\bibliography{../latex/references}
+
+\end{document}
