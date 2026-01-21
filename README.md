@@ -79,6 +79,32 @@ The next step of the pipeline is preparing data for training and testing the mod
 python src/data/prepare_data.py
 ```
 
+Once data is prepared you can start the modeling process by running the feature importance method
+```shell
+python src/modeling/feature_importance.py
+```
+
+With the feature importance results saved you can run the model optimization process by either of the following ways:
+1) Running the optimization for a single model to estimate either SOH or RUL using a specific number of features. All this parameters are set within the `src/conf/config.yaml` config file.
+```shell
+python src/modeling/optimization.py
+```
+2) Dispatching multiple jobs using Hydra's multirun, this will run all available models each for both targets (SOH and RUL) while using 4 and 16 features. Note that this can be computationally expensive. The grid for multirun configs can be found at the botton of the `src/conf/config.yaml` config file.
+```shell
+python src/modeling/optimization.py -m
+```
+
+Once optimization process is done, you can run the evaluation script that will read the results saved at the optimization process and complement it with evaluation metrics.
+```shell
+python src/modeling/evaluation.py
+```
+Or the following for multirun
+```shell
+python src/modeling/evaluation.py -m
+```
+
+At this point all the necessary results for analysis should be saved within `src/results` folder, and you can use the notebooks to analyze both the data at each processing step and the results for comparison.
+
 ## Research Outcomes
 
 ### Scientific Paper
@@ -99,19 +125,19 @@ This research project yields a robust python framework for machine learning expe
 ## Project Organization
 
 ```
-├── LICENSE            <- Open-source license if one is chosen
 ├── README.md          <- The top-level README for developers using this project.
 │
 ├── data               <- All project data
-│   ├── external       <- Data from third party sources (Severson et al. dataset)
-│   ├── interim        <- Intermediate data that has been transformed
-│   ├── processed      <- The final, canonical data sets for modeling
-│   └── raw            <- The original, immutable data dump
+│   ├── external       <- Data from third party sources (Severson et al. dataset) (Please download severson .mat files and place them within this folder for reproducing the results)
+│   ├── interim        <- Intermediate data that has been transformed (This is created by running the code)
+│   ├── processed      <- The final, canonical data sets for modeling (This is created by running the code)
+│   └── raw            <- The original, immutable data dump (This is created by running the code)
 │
-├── models             <- Trained and serialized models, model predictions, or model summaries
+├── results            <- Partial and final results saved through pipeline execution.
 │
 ├── notebooks          <- Jupyter notebooks for analysis and visualization
 │                         Naming convention: number_initials-description (e.g. 1.0-jqp-eda)
+│                           There are both notebooks for analysing the data at each preparation and processing step, as well as a notebook for analysing the results generated after running the whole pipeline. As the results are saved in the repository files, you can run the results analysis notebook in orther to analyse the results without having to re-run the whole pipeline.
 │
 ├── paper              <- Research paper and related materials (key output of research)
 │   ├── latex/         <- LaTeX source for the scientific paper
@@ -125,13 +151,13 @@ This research project yields a robust python framework for machine learning expe
 │
 ├── pyproject.toml     <- Project configuration and dependencies (Pixi/Poetry)
 │
-├── references/        <- Data dictionaries, manuals, and explanatory materials
+├── pixi.lock          <- Pixi environment lock file
+│
 │
 └── src/               <- Source code for data processing and modeling
     ├── __init__.py
     ├── data/          <- Data loading and preprocessing scripts
     ├── conf/          <- Configuration files (paths, parameters)
     ├── analysis/      <- Exploratory data analysis scripts
-    ├── modeling/      <- Model training, evaluation, and prediction
-    └── functions.py   <- Utility functions
+    └── modeling/      <- Model training, evaluation, and prediction
 ```
