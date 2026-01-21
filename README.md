@@ -121,7 +121,6 @@ This research project yields a robust python framework for machine learning expe
 │   │   ├── tables/    <- Data tables for the paper
 │   │   ├── references.bib <- Bibliography
 │   │   └── preamble.tex   <- LaTeX configuration
-│   ├── markdown/      <- Markdown version of paper for documentation
 │   └── figures/       <- Generated graphics and figures to be used in reporting
 │
 ├── pyproject.toml     <- Project configuration and dependencies (Pixi/Poetry)
