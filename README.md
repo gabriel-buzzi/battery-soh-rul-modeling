@@ -1,4 +1,4 @@
-# Lightweight Single-Cycle Prognostics for Li-ion Batteries: Feature Extraction and Cross-Cell Generalization
+# Exploring Li-ion Battery State-of-Health (SoH) and Remaining Useful Life (RUL) estimation using machine learning
 
 ## Project Overview
 
