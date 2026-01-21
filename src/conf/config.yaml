@@ -27,11 +27,11 @@ modeling:
   target: SOH
   num_features: 8
   n_jobs: 2 # Available core for models training
-  feature_importances_dir: ./models/feature_importances/
+  feature_importances_dir: ./results/feature_importances/
   max_trials: 50
   early_stopping_patience: 10
-  optimization_results_dir: ./models/optimization/
-  evaluation_results_dir: ./models/evaluation/
+  optimization_results_dir: ./results/optimization/
+  evaluation_results_dir: ./results/evaluation/
 
 analysis:
   figures_folder: ./reports/figures
