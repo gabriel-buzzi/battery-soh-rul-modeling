@@ -41,10 +41,10 @@ Instead of manual tuning, the project employs an automated optimization stage:
 
 Models were optimized on a training set of 99 cells and validated on a completely **unseen test set of 25 cells**.
 
-| Target | Model Architecture | Metric (Test Set) | Generalization Capability |
-| --- | --- | --- | --- |
-| **State of Health** | LightGBM Regressor | **RMSE < 0.80%** | High () |
-| **RUL** | Extra Trees Regressor | **RMSE < 60 cycles** | High () |
+| Target | Model Architecture | Metric (Test Set) |
+| --- | --- | --- |
+| **State of Health** | LightGBM Regressor | **RMSE < 0.80%** |
+| **RUL** | Extra Trees Regressor | **RMSE < 60 cycles** |
 
 > **Research Insight:** Error analysis showed that tree-based ensembles generalized significantly better across different fast-charging policies compared to linear baselines. The subsampling strategy reduced training time by ~60% with negligible impact on final test accuracy.
 
