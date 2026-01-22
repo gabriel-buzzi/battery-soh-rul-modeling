@@ -1,11 +1,3 @@
-This is a smart pivot. For **AI Research** and **Machine Learning Engineer** roles, the hiring manager is less interested in "Can you put this in a Docker container?" and more interested in "Did you evaluate this correctly?" and "Can you design a rigorous experiment?"
-
-They want to see that you understand **data leakage, statistical significance, and experimental reproducibility.**
-
-Here is the revised README. It highlights the rigorous evaluation protocols, the sophisticated optimization pipeline (Bayesian search), and the engineering that went into making the experimentation scalable.
-
----
-
 # 🔋 Li-ion Battery Prognostics: A Reproducible Research Framework
 
 ## 📌 Project Overview
