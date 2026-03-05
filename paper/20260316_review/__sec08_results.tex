@@ -1,8 +1,10 @@
 \section{Results} \label{sec:results}
 
-\subsection{Optimization Results}\todo[size=\tiny]{[r1] Authors should include a validation section}
+\subsection{Optimization Results \textcolor{red}{and Validation}}
 
 Table \ref{tab:soh_optim} and \ref{tab:rul_optim} below show the results of the optimization process for both \acf{soh} and \acf{rul}, respectively. It can be seen that the models produced good values of validation \acf{rmse}, which is the average of the \ac{rmse} on each fold of cross validation, while maintaining low relative gaps which is a good indicative of non-overfitting models. For \ac{rul} models, authough it was harder to keep the relative gap values low, which indicates models for that target with the features extracted on this work are more prone to overfitt the training data.\todo[size=\tiny]{[R1] Authors should explain how 4 features results in better outcomes than 16, Explain in detail w/ Physics.}
+
+\textcolor{red}{Model selection and evaluation followed a two-stage design: hyperparameter selection was carried out with 5-fold Group K-Fold cross-validation using only training cells (cell-wise separation), and the final selected models were then evaluated on a fully disjoint test set of 25 cells. This ensures that validation scores characterize model-selection performance while test scores quantify cross-cell generalization.}
 
 % Table for SOH
 \begin{table}[H]
