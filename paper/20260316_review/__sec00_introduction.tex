@@ -1,0 +1,31 @@
+\section{Introduction} \label{sec:intro}
+
+The transition to renewable energy and the rapid adoption of electric mobility have placed \acf{libs} at the center of modern energy storage technologies. Ensuring their safety, reliability, and economic viability requires accurate monitoring of degradation and forecasting of future performance, a field known as battery prognosis. Two key indicators are \acf{soh}, the capacity relative to a new cell, and \acf{rul}, the cycles until a predefined end-of-life. Reliable estimation of these metrics is critical for optimizing battery use, enabling predictive maintenance, and extending system lifetime in applications such as electric vehicles and stationary storage systems.  
+
+Despite significant progress, existing methods for battery prognosis face important challenges. Many \acf{ml} approaches rely on handcrafted features extracted from full charge--discharge cycles, which restricts their applicability to controlled datasets where continuous cycling data are available. More advanced deep learning methods have been proposed to process raw electrochemical signals directly, thereby bypassing manual feature engineering \cite{Che2022, Lv2024}. However, these approaches introduce substantial computational demands and often lack interpretability, which limits their deployment in embedded battery management systems. Furthermore, most studies validate their methods on laboratory datasets collected under highly controlled conditions, often with aggressive fast-charging protocols and uniform cycling patterns \cite{Jafari2024, Liu2025}. Such protocols do not reflect the intermittent and partial cycling profiles seen in real-world applications, reducing the generalizability of the resulting models.  
+
+Another key limitation is the reliance on multiple consecutive cycles to extract reliable prognostic features. Operational systems rarely provide uninterrupted sequences of complete charge--discharge cycles, making such requirements impractical. This highlights the need for models capable of producing robust SoH and RUL estimates from limited information, ideally from a single diagnostic cycle, without assuming continuous access to full degradation histories.
+
+In this work, we address these challenges by developing tree-based machine learning models \todo[size=\tiny]{[R1] Explain why this decided to use tree-based models as opposed to Deep Learning.}: trained on a large, publicly available dataset of 124 commercial LiFePO\textsubscript{4}/graphite cells cycled under fast-charging conditions \cite{sev2019}. The decision to focus on tree-based models, as opposed to deep-learning, is justified due to the nature of the dataset being  considered: high dimension, structured, tabular datasets; these are conditions classical machine learning deals very well. Additionally, these models are typically simpler and more appropriate in edge-computing, where resources are more strained.   % LOOK INTO GERON
+
+Unlike prior studies that depend on sequences of multiple cycles, our methodology demonstrates that accurate inference of both SoH and RUL can be achieved using only the information contained in a single conventional charge-discharge cycle. \todo[size=\tiny]{[R1] What is the reason to use single-cycle? Explain it in more depth.} This approach reflects a realistic diagnostic scenario where historical battery data is unavailable (thus the need of a single cycle) and without requiring normal operation to be interrupted and a specialized time-consuming diagnostic protocol to be performed (which explains the preference for operational data). By extracting statistical features from voltage, current, and temperature signals at the cycle level, we provide a compact and computationally efficient representation suitable for supervised learning. The main contributions are twofold:
+
+\begin{enumerate}[i]
+    \item We show that reliable prognosis does not require long degradation histories for inference, thereby increasing the applicability of ML methods in real-world battery management systems.
+    \item We present a systematic evaluation of feature-based models for SoH and RUL estimation, highlighting the balance between interpretability, efficiency, and predictive performance.  
+\end{enumerate}
+
+
+
+The rest of this work is structured as such: Sections \ref{sec:related_works}, \ref{sec:dataset}, \ref{sec:soh_rul}, and \ref{sec:data_analysis} introduce the theoretical backing of the paper, they include a literature review, a definition and description of the problem and an introduction and exploration of the dataset used within this model, from Severson et al \cite{sev2019}. Sections \ref{sec:feature_extraction}, \ref{sec:ml_models} and \ref{sec:optimiation} includes the bulk of the methodology; this includes the process of data clean-up and feature extraction, the various types of tree-based models under consideration and the process of training and hyper-parameters optimization. Section \ref{sec:results} discusses the results and Section \ref{sec:conclusions} concludes with a discussion. Table  \ref{tab:Acronyms} is a glossary with a list of all the acronyms used in this work.
+
+\begin{table}[]
+    \centering
+    \printacronyms[template=tabular, name=Glossary]
+    \caption{List of Acronyms found in this work.}
+    \label{tab:Acronyms}
+\end{table}
+
+% (i) , and (ii) we present a systematic evaluation of feature-based models for SoH and RUL estimation, highlighting the balance between interpretability, efficiency, and predictive performance.  
+
+

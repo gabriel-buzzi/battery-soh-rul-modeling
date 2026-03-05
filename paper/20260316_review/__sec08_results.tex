@@ -1,0 +1,328 @@
+\section{Results} \label{sec:results}
+
+\subsection{Optimization Results}\todo[size=\tiny]{[r1] Authors should include a validation section}
+
+Table \ref{tab:soh_optim} and \ref{tab:rul_optim} below show the results of the optimization process for both \acf{soh} and \acf{rul}, respectively. It can be seen that the models produced good values of validation \acf{rmse}, which is the average of the \ac{rmse} on each fold of cross validation, while maintaining low relative gaps which is a good indicative of non-overfitting models. For \ac{rul} models, authough it was harder to keep the relative gap values low, which indicates models for that target with the features extracted on this work are more prone to overfitt the training data.\todo[size=\tiny]{[R1] Authors should explain how 4 features results in better outcomes than 16, Explain in detail w/ Physics.}
+
+% Table for SOH
+\begin{table}[H]
+    \centering
+    \caption{Mean training and validation RMSE and relative gap across folds for machine learning models predicting State of Health (SOH) using 4 or 16 features, evaluated via 5-fold cross-validation.}
+    \label{tab:soh_optim}
+    \begin{tabular}{lcrrr}
+    \toprule
+    Model & Features & \multicolumn{2}{c}{RMSE} & Relative Gap \\
+    \cmidrule(lr){3-4}
+          &          & Train & Validation & \\
+    \midrule
+    \multirow{2}{*}{LGBMRegressor}       & 16 & 0.52 & 0.94 & 0.44 \\
+                                         & 4  & 0.86 & 1.22 & 0.29 \\
+    \cmidrule{1-5}
+    \multirow{2}{*}{ExtraTreesRegressor} & 16 & 0.78 & 1.07 & 0.27 \\
+                                         & 4  & 1.23 & 1.40 & 0.12 \\
+    \cmidrule{1-5}
+    \multirow{2}{*}{KNeighborsRegressor} & 16 & 0.80 & 1.28 & 0.38 \\
+                                         & 4  & 1.15 & 1.50 & 0.24 \\
+    \cmidrule{1-5}
+    \multirow{2}{*}{TweedieRegressor}    & 16 & 1.66 & 1.77 & 0.06 \\
+                                         & 4  & 2.03 & 2.06 & 0.01 \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+% Table for RUL
+\begin{table}[H]
+    \centering
+    \caption{Mean training and validation RMSE and relative gap across folds for machine learning models predicting Remaining Useful Life (RUL) using 4 or 16 features, evaluated via 5-fold cross-validation.}
+    \label{tab:rul_optim}
+    \begin{tabular}{lcrrr}
+    \toprule
+    Model & Features & \multicolumn{2}{c}{RMSE} & Relative Gap \\
+    \cmidrule(lr){3-4}
+          &          & Train & Validation & \\
+    \midrule
+    \multirow{2}{*}{ExtraTreesRegressor} & 16 & 31.38 & 103.64 & 0.70 \\
+                                         & 4  & 52.33 & 110.00 & 0.52 \\
+    \cmidrule{1-5}
+    \multirow{2}{*}{LGBMRegressor}       & 16 & 18.51 & 106.14 & 0.83 \\
+                                         & 4  & 22.12 & 109.09 & 0.80 \\
+    \cmidrule{1-5}
+    \multirow{2}{*}{KNeighborsRegressor} & 16 & 56.22 & 143.10 & 0.61 \\
+                                         & 4  & 51.19 & 112.09 & 0.54 \\
+    \cmidrule{1-5}
+    \multirow{2}{*}{TweedieRegressor}    & 16 & 367.01 & 367.01 & 0.00 \\
+                                         & 4  & 337.10 & 340.03 & 0.01 \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+
+Tables \ref{tab:soh_hyperparams} and \ref{tab:rul_hyperparams} show the optimimal values of the hyperparams for \ac{soh} and \ac{rul}, respectively. 
+
+\begin{table}[p]
+    \centering
+    \caption{Optimal hyperparameters for SOH prediction}
+    \label{tab:soh_hyperparams}
+    \resizebox{0.81\textwidth}{!}{%
+    \begin{tabular}{lllc}
+    \toprule
+    Model & Num. Features & Hyper Param & Optimal Value \\
+    \midrule
+    \multirow{5}{*}{ExtraTreesRegressor} & \multirow{5}{*}{\num{16}} & n\_estimators & \num{87} \\
+    & & max\_depth & \num{7} \\
+    & & min\_samples\_split & \num{3} \\
+    & & min\_samples\_leaf & \num{1} \\
+    & & criterion & squared\_error \\
+    \cmidrule(l){2-4}
+    & \multirow{5}{*}{\num{4}} & n\_estimators & \num{87} \\
+    & & max\_depth & \num{7} \\
+    & & min\_samples\_split & \num{3} \\
+    & & min\_samples\_leaf & \num{1} \\
+    & & criterion & squared\_error \\
+    \midrule
+    \multirow{3}{*}{KNeighborsRegressor} & \multirow{3}{*}{\num{16}} & n\_neighbors & \num{35} \\
+    & & weights & uniform \\
+    & & p & \num{1} \\
+    \cmidrule(l){2-4}
+    & \multirow{3}{*}{\num{4}} & n\_neighbors & \num{35} \\
+    & & weights & uniform \\
+    & & p & \num{1} \\
+    \midrule
+    \multirow{9}{*}{LGBMRegressor} & \multirow{9}{*}{\num{16}} & n\_estimators & \num{661} \\
+    & & learning\_rate & \num{0.0066019849581648} \\
+    & & num\_leaves & \num{18} \\
+    & & max\_depth & \num{5} \\
+    & & min\_child\_samples & \num{13} \\
+    & & subsample & \num{0.864803089169032} \\
+    & & colsample\_bytree & \num{0.8187787356776066} \\
+    & & reg\_alpha & \num{0.1252281430305362} \\
+    & & reg\_lambda & \num{0.00005994036749692399} \\
+    \cmidrule(l){2-4}
+    & \multirow{9}{*}{\num{4}} & n\_estimators & \num{661} \\
+    & & learning\_rate & \num{0.0066019849581648} \\
+    & & num\_leaves & \num{18} \\
+    & & max\_depth & \num{5} \\
+    & & min\_child\_samples & \num{13} \\
+    & & subsample & \num{0.864803089169032} \\
+    & & colsample\_bytree & \num{0.8187787356776066} \\
+    & & reg\_alpha & \num{0.1252281430305362} \\
+    & & reg\_lambda & \num{0.00005994036749692399} \\
+    \midrule
+    \multirow{4}{*}{TweedieRegressor} & \multirow{4}{*}{\num{16}} & power & \num{1.3779972601681014} \\
+    & & alpha & \num{0.00001951722464144947} \\
+    & & fit\_intercept & True \\
+    & & tol & \num{0.0001331121608073} \\
+    \cmidrule(l){2-4}
+    & \multirow{4}{*}{\num{4}} & power & \num{1.3779972601681014} \\
+    & & alpha & \num{0.00001951722464144947} \\
+    & & fit\_intercept & True \\
+    & & tol & \num{0.0001331121608073} \\
+    \bottomrule
+    \end{tabular}
+    }
+\end{table}
+
+\begin{table}[p]
+    \centering
+    \caption{Optimal hyperparameters for RUL prediction}
+    \label{tab:rul_hyperparams}
+    \resizebox{0.81\textwidth}{!}{%
+    \begin{tabular}{lllc}
+    \toprule
+    Model & Num. Features & Hyper Param & Optimal Value \\
+    \midrule
+    \multirow{5}{*}{ExtraTreesRegressor} & \multirow{5}{*}{\num{16}} & n\_estimators & \num{62} \\
+    & & max\_depth & \num{10} \\
+    & & min\_samples\_split & \num{4} \\
+    & & min\_samples\_leaf & \num{4} \\
+    & & criterion & squared\_error \\
+    \cmidrule(l){2-4}
+    & \multirow{5}{*}{\num{4}} & n\_estimators & \num{110} \\
+    & & max\_depth & \num{10} \\
+    & & min\_samples\_split & \num{9} \\
+    & & min\_samples\_leaf & \num{2} \\
+    & & criterion & squared\_error \\
+    \midrule
+    \multirow{3}{*}{KNeighborsRegressor} & \multirow{3}{*}{\num{16}} & n\_neighbors & \num{35} \\
+    & & weights & uniform \\
+    & & p & \num{1} \\
+    \cmidrule(l){2-4}
+    & \multirow{3}{*}{\num{4}} & n\_neighbors & \num{21} \\
+    & & weights & uniform \\
+    & & p & \num{2} \\
+    \midrule
+    \multirow{9}{*}{LGBMRegressor} & \multirow{9}{*}{\num{16}} & n\_estimators & \num{563} \\
+    & & learning\_rate & \num{0.0293415275650007} \\
+    & & num\_leaves & \num{17} \\
+    & & max\_depth & \num{7} \\
+    & & min\_child\_samples & \num{9} \\
+    & & subsample & \num{0.5325257964926398} \\
+    & & colsample\_bytree & \num{0.9744427686266666} \\
+    & & reg\_alpha & \num{0.530953226900921} \\
+    & & reg\_lambda & \num{0.0293210004718329} \\
+    \cmidrule(l){2-4}
+    & \multirow{9}{*}{\num{4}} & n\_estimators & \num{400} \\
+    & & learning\_rate & \num{0.1123189435432641} \\
+    & & num\_leaves & \num{24} \\
+    & & max\_depth & \num{9} \\
+    & & min\_child\_samples & \num{15} \\
+    & & subsample & \num{0.7774469727501079} \\
+    & & colsample\_bytree & \num{0.6752997137819545} \\
+    & & reg\_alpha & \num{0.000574402723477} \\
+    & & reg\_lambda & \num{0.0000355834220233792} \\
+    \midrule
+    \multirow{4}{*}{TweedieRegressor} & \multirow{4}{*}{\num{16}} & power & \num{1.3779972601681014} \\
+    & & alpha & \num{0.00001951722464144947} \\
+    & & fit\_intercept & True \\
+    & & tol & \num{0.0001331121608073} \\
+    \cmidrule(l){2-4}
+    & \multirow{4}{*}{\num{4}} & power & \num{1.7609371175115585} \\
+    & & alpha & \num{0.00002769889922756281} \\
+    & & fit\_intercept & True \\
+    & & tol & \num{0.000009462175356461489} \\
+    \bottomrule
+    \end{tabular}
+    }
+\end{table}
+
+\subsection{Test Results}
+
+The results of each model type using the optimal hyperparam set are shown on \cref{tab:soh_metrics,tab:rul_metrics} for \ac{soh} and \ac{rul}, respectively. The performance drop between using 16 and 4 features were relatively low indicating models with only the most important features identifies by the Tree-based ensamble described in Section \ref{sec:feature_extraction} is feasible.
+
+The overall performance of all models is satisfactory with \ac{rmse} values below 0.80\% for \ac{soh} using a LGBMRegressor for 75\% of the test cells and below 59.91 for \ac{rul} using an ExtraTreesRegressor for 75\% of the test cells. \ac{r2} values for 75\% of the test cells were above 0.97 and 0.96 for \ac{soh} and \ac{rul}, respectively. Indicating high accordance between the models estimations and references values.
+
+% Table for SOH
+\begin{table}[H]
+    \centering
+    \caption{Performance metrics (RMSE and R²) for machine learning models predicting State of Health (SOH) using 4 or 16 features, evaluated via 5-fold cross-validation.}
+    \label{tab:soh_metrics}
+    \begin{tabular}{lcrrrr}
+    \toprule
+    Model & Features & \multicolumn{2}{c}{RMSE} & \multicolumn{2}{c}{R²} \\
+    \cmidrule(lr){3-4} \cmidrule(lr){5-6}
+          &          & Median & Q3 & Median & Q1 \\
+    \midrule
+    \multirow{2}{*}{LGBMRegressor}       & 16 & 0.71 & 0.80 & 0.97 & 0.96 \\
+                                         & 4  & 0.96 & 1.25 & 0.95 & 0.90 \\
+    \cmidrule{1-6}
+    \multirow{2}{*}{KNeighborsRegressor} & 16 & 0.69 & 1.14 & 0.98 & 0.90 \\
+                                         & 4  & 1.04 & 1.32 & 0.94 & 0.88 \\
+    \cmidrule{1-6}
+    \multirow{2}{*}{ExtraTreesRegressor} & 16 & 0.83 & 0.97 & 0.97 & 0.94 \\
+                                         & 4  & 0.96 & 1.32 & 0.95 & 0.89 \\
+    \cmidrule{1-6}
+    \multirow{2}{*}{TweedieRegressor}    & 16 & 1.36 & 2.33 & 0.88 & 0.70 \\
+                                         & 4  & 1.63 & 2.24 & 0.81 & 0.70 \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+% Table for RUL
+\begin{table}[H]
+    \centering
+    \caption{Performance metrics (RMSE and R²) for machine learning models predicting Remaining Useful Life (RUL) using 4 or 16 features, evaluated via 5-fold cross-validation.}
+    \label{tab:rul_metrics}
+    \begin{tabular}{lcrrrr}
+    \toprule
+    Model & Features & \multicolumn{2}{c}{RMSE} & \multicolumn{2}{c}{R²} \\
+    \cmidrule(lr){3-4} \cmidrule(lr){5-6}
+          &          & Median & Q3 & Median & Q1 \\
+    \midrule
+    \multirow{2}{*}{ExtraTreesRegressor} & 16 & 41.63 & 59.91 & 0.96 & 0.90 \\
+                                         & 4  & 45.21 & 68.41 & 0.96 & 0.91 \\
+    \cmidrule{1-6}
+    \multirow{2}{*}{LGBMRegressor}       & 16 & 49.46 & 76.74 & 0.95 & 0.89 \\
+                                         & 4  & 59.92 & 69.59 & 0.93 & 0.91 \\
+    \cmidrule{1-6}
+    \multirow{2}{*}{KNeighborsRegressor} & 16 & 54.17 & 95.94 & 0.93 & 0.79 \\
+                                         & 4  & 63.85 & 100.44 & 0.91 & 0.81 \\
+    \cmidrule{1-6}
+    \multirow{2}{*}{TweedieRegressor}    & 16 & 63.52 & 102.68 & 0.90 & 0.71 \\
+                                         & 4  & 89.41 & 124.98 & 0.85 & 0.60 \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+Figures \ref{fig:best_16_soh_model} to \ref{fig:best_4_rul_model} show in detail the scatter plots of all reference vs. estimated values of all test cells for the best model in each case: \ac{soh} and \ac{rul} and using all 16 features and only 4 features. It can be confirmed that the model works really well for most data while some points are more distant from the ideal fit line. For \ac{soh} models under and over estimate values while for \ac{rul} models tend to under estimate the values. For the \ac{rul} models with 16 and 4 features it can be noticed that a similar set of points diverge from the ideal regression line, we identified that this points correspond to the same cell of the test set. From the plot it can be seen that this cell is the only with almost 2000 cycles cyclelife, this divergence of the model might be happening because data with \ac{rul} values that high are more scarce on the training set as well due to the fact few cells cycle that long on the dataset used.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{_img_16_features_LGBMRegressor_SOH_scatter.png}
+    \caption{Predicted vs. true \ac{soh} for test cells using 16 features. The dashed line shows the ideal $y=x$ fit. Performance metrics (\ac{rmse}, \ac{mae}, \ac{r2}) are reported per panel.}
+    \label{fig:best_16_soh_model}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{_img_4_features_LGBMRegressor_SOH_scatter.png}
+    \caption{Predicted vs. true \ac{soh} for test cells using four features. The dashed line shows the ideal $y=x$ fit. Performance metrics (\ac{rmse}, \ac{mae}, \ac{r2}) are reported per panel.}
+    \label{fig:best_4_soh_model}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{_img_16_features_ExtraTreesRegressor_RUL_scatter.png}
+    \caption{Predicted vs. true \ac{rul} for test cells using 16 features. The dashed line shows the ideal $y=x$ fit. Performance metrics (\ac{rmse}, \ac{mae}, \ac{r2}) are reported per panel.}
+    \label{fig:best_16_rul_model}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{_img_4_features_ExtraTreesRegressor_RUL_scatter.png}
+    \caption{Predicted vs. true \ac{rul} for test cells using four features. The dashed line shows the ideal $y=x$ fit. Performance metrics (\ac{rmse}, \ac{mae}, \ac{r2}) are reported per panel.}
+    \label{fig:best_4_rul_model}
+\end{figure} \todo[size=\tiny]{[R2] Prediction deviation is large for cells with long timestamp. Explain whether the characteristics of these abnormal cells, such as charging protocols and temperatures anomalies, have been analyzed.}
+
+
+
+
+
+
+\section{Results and Discussion}
+\subsection{Hyperparameter Optimization Performance}
+The hyperparameter optimization process successfully identified optimal configurations for all machine learning models across both \ac{soh} and \ac{rul} prediction tasks. Tables \ref{tab:soh_optim} and \ref{tab:rul_optim} present the cross-validation performance metrics obtained during the optimization phase, revealing distinct patterns in model behavior and generalization capabilities.
+
+For \ac{soh} prediction (Table \ref{tab:soh_optim}), the LGBMRegressor demonstrated superior performance with the lowest validation \ac{rmse} of 0.94\% when utilizing all 16 features, while maintaining a moderate relative gap of 0.44. This indicates a balanced trade-off between predictive accuracy and overfitting resistance. The ExtraTreesRegressor achieved comparable performance with a validation \ac{rmse} of 1.07\% and notably lower relative gap of 0.27, suggesting better generalization properties. The TweedieRegressor, while exhibiting excellent generalization characteristics ($relative gaps \leq 0.06$), showed substantially higher validation errors, indicating insufficient model complexity for capturing the underlying \ac{soh} patterns.
+
+\ac{rul} prediction (Table \ref{tab:rul_optim}) proved more challenging, with all models exhibiting higher relative gaps compared to \ac{soh} estimation, suggesting increased susceptibility to overfitting. The ExtraTreesRegressor achieved the best validation performance with an \ac{rmse} of 103.64 cycles using 16 features, though with a concerning relative gap of 0.70. The LGBMRegressor, despite lower training error (18.51 cycles), showed an even larger relative gap of 0.83, indicating significant overfitting tendencies. The TweedieRegressor again demonstrated perfect generalization ($relative gap \approx 0.00$) but at the cost of substantially higher prediction errors.\todo[size=\tiny]{[R1] How to find cycle errors in SOH and RUL prediction. Confirm if these errors are significant in EV applications.}
+
+\subsection{Impact of Feature Reduction}
+The transition from 16 to 4 features resulted in predictable but manageable performance degradation across all models. For \ac{soh} prediction, validation \ac{rmse} increased by 20--30\% for tree-based methods (LGBMRegressor: $0.94\% \rightarrow 1.22\%$, ExtraTreesRegressor: $1.07\% \rightarrow
+1.40\%$), while simultaneously reducing overfitting tendencies as evidenced by decreased relative gaps. This trade-off suggests that the four most important features capture the majority of \ac{soh}-relevant information, with additional features contributing primarily to model complexity rather than fundamental predictive power.
+
+The feature reduction impact on \ac{rul} prediction was less pronounced, with validation \ac{rmse} changes typically within 10\% (ExtraTreesRegressor: $103.64 \rightarrow 110.00$ cycles). Notably, the reduced feature set generally improved generalization capabilities, with several models showing decreased relative gaps. This pattern indicates that \ac{rul} prediction may be more robust to feature dimensionality reduction, possibly due to the inherent noise in cycle-life estimation making additional features less beneficial.
+
+\subsection{Optimal Hyperparameter Analysis}
+The optimal hyperparameters (Table \ref{tab:soh_hyperparams} and \ref{tab:rul_hyperparams}) reveal consistent patterns that provide insights into the underlying data characteristics and model requirements. For tree-based methods, the optimal configurations favored relatively shallow trees ($max\_depth \leq 10$) and small leaf sizes ($min\_samples\_leaf \leq 4$), suggesting that the battery aging patterns can be captured without excessive model complexity. The LGBMRegressor consistently selected low learning rates (0.007--0.11) paired with moderate numbers of estimators (400--661), indicating a preference for gradual learning to avoid overfitting.
+
+Interestingly, the KNeighborsRegressor optimal configurations showed preference for relatively large neighborhood sizes (n\_neighbors = 21--35) and uniform weighting, suggesting that local averaging over substantial regions of the feature space is beneficial for battery prognostics. The consistent selection of Manhattan distance (p=1p=1
+p=1) over Euclidean distance (p=2p=2
+p=2) for most configurations may indicate that the standardized features exhibit more meaningful relationships under L1 norm.
+
+\subsection{Model-Specific Performance Characteristics}
+
+The superior performance of tree-based ensemble methods (LGBMRegressor and ExtraTreesRegressor) aligns with their inherent ability to capture non-linear relationships and feature interactions without explicit modeling. Battery aging involves complex, non-linear degradation mechanisms that these methods can naturally accommodate. The gradient boosting approach of LGBMRegressor appears particularly well-suited for \ac{soh} estimation, where sequential refinement of predictions can effectively model the gradual capacity fade patterns.
+The consistently poor performance of TweedieRegressor, despite its excellent generalization properties, suggests that linear models---even with flexible error distributions---are insufficient for capturing the complexity of battery degradation patterns encoded in the extracted features. This finding reinforces the necessity of non-linear modeling approaches for battery prognostics applications.
+
+\subsection{Test Set Performance and Model Validation}
+
+The test set results (Tables \ref{tab:soh_metrics} and \ref{tab:rul_metrics}) demonstrate that the optimized models successfully generalize to unseen cells, with performance metrics closely matching the cross-validation estimates. For \ac{soh} prediction, the LGBMRegressor achieved an \ac{rmse} below 0.80\% for 75\% of test cells, with \acf{r2} values above 0.97, indicating high accordance between model estimations and reference values. Similarly, for \ac{rul} prediction, the ExtraTreesRegressor maintained \ac{rmse} values below 59.91 cycles for 75\% of test cells, with \ac{r2} values above 0.96.
+The scatter plots (Figures \ref{fig:best_16_soh_model} through to \ref{fig:best_4_rul_model}) provide detailed visualization of model performance across all test samples. For \ac{soh} models, the predictions show balanced distribution around the ideal fit line, with both under- and over-estimation patterns. In contrast, \ac{rul} models exhibit a tendency toward under-estimation, particularly evident in the high-cycle region where one test cell with approximately 2000 cycles consistently deviates from the ideal regression line. This divergence likely stems from the scarcity of such long-lived cells in the training dataset, highlighting a limitation in model generalization to extreme cycle-life scenarios.
+
+\subsection{Practical Implications and Deployment Considerations}
+
+From a practical battery management perspective, the results demonstrate that effective \ac{soh} and \ac{rul} estimation can be achieved using a minimal feature set derived from single charge-discharge cycles sampled at 1~Hz or higher. The 4-feature models, while showing modest performance reduction, offer significant computational advantages for embedded applications where processing power and memory are constrained.
+
+However, a critical limitation for real-world deployment concerns data availability. The feature extraction methodology requires complete constant current constant voltage (CCCV) charge-discharge cycle data, which may not be readily available during normal battery operation in applications such as electric vehicles or grid energy storage systems. Such complete cycling data would typically only be obtainable during dedicated diagnostic procedures with the load disconnected from the battery, limiting the frequency of prognostic updates and potentially compromising the timeliness of health assessments. This constraint necessitates careful consideration of diagnostic scheduling and may require development of alternative feature extraction methods that can operate on partial cycle data or operational load profiles.
+
+Despite this limitation, the observed performance characteristics suggest different deployment strategies for \ac{soh} and \ac{rul} estimation. \ac{soh} models demonstrate robust performance across the full range of battery conditions, making them suitable for periodic diagnostic monitoring applications. \ac{rul} models, while showing excellent performance for typical battery lifespans, may require additional training data or specialized handling for batteries exhibiting exceptional longevity, and their deployment would be similarly constrained by the need for complete cycle data.
+
+\subsection{Limitations and Future Research Directions}
+
+Several limitations must be acknowledged in the current optimization approach. The use of a 10\% subset (Figure \ref{fig:subset_distributions}) for hyperparameter optimization, while computationally efficient, may not fully capture the complete data distribution complexity.\todo[size=\tiny]{[R2] Does this imply the optimizatin results might unstable?} Additionally, the focus on full-life training data, while comprehensive for model evaluation, may not reflect real-world scenarios where models must perform early-life predictions with limited degradation history.
+
+A fundamental limitation lies in the requirement for complete CCCV cycle data for feature extraction. This dependency significantly restricts the practical applicability of the developed models, as such data is typically unavailable during normal battery operation and can only be obtained during scheduled diagnostic procedures. Future research should prioritize the development of feature extraction methods that can operate on partial cycle data, operational load profiles, or other readily available signals to enable continuous prognostic monitoring without service interruption.
+
+The identified overfitting tendencies, particularly for \ac{rul} prediction, highlight the need for regularization strategies beyond hyperparameter optimization. Future work should investigate ensemble approaches that combine multiple models or incorporate physics-informed constraints to improve generalization while maintaining predictive accuracy. The development of hybrid models that combine the generalization properties of simpler methods with the predictive power of complex ensemble approaches could address the observed overfitting issues.
+
+The consistent challenges observed in \ac{rul} prediction across all models indicate a need for alternative problem formulations, such as classification-based approaches that predict remaining life ranges rather than precise cycle counts, or multi-task learning frameworks that jointly optimize \ac{soh} and \ac{rul} estimation to leverage their inherent relationships. Additionally, investigating domain-specific regularization techniques that incorporate known battery aging physics could improve model robustness and reduce the sensitivity to training data distribution variations.
