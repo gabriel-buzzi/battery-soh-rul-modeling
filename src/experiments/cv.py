@@ -6,11 +6,17 @@ from typing import Any
 
 import pandas as pd
 from sklearn.base import clone
-from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
+from sklearn.metrics import (
+    mean_absolute_error,
+    r2_score,
+    root_mean_squared_error,
+)
 from sklearn.model_selection import GroupKFold
 
 
-def regression_metrics(y_true: pd.Series, y_pred: pd.Series) -> dict[str, float]:
+def regression_metrics(
+    y_true: pd.Series, y_pred: pd.Series
+) -> dict[str, float]:
     """Compute regression metrics used across experiment runs."""
     return {
         "rmse": float(root_mean_squared_error(y_true, y_pred)),
@@ -42,8 +48,8 @@ def evaluate_grouped_cv(
         fold_metrics = regression_metrics(y_true=y_val, y_pred=y_val_pred)
         fold_rows.append({"fold": fold_idx, **fold_metrics})
 
-    fold_metrics_df = pd.DataFrame(fold_rows).sort_values("fold").reset_index(
-        drop=True
+    fold_metrics_df = (
+        pd.DataFrame(fold_rows).sort_values("fold").reset_index(drop=True)
     )
     aggregate_metrics = {
         "rmse_mean": float(fold_metrics_df["rmse"].mean()),
@@ -54,4 +60,3 @@ def evaluate_grouped_cv(
         "r2_std": float(fold_metrics_df["r2"].std(ddof=0)),
     }
     return fold_metrics_df, aggregate_metrics
-

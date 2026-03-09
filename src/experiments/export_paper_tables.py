@@ -2,15 +2,19 @@
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
+import time
 
 import hydra
 from hydra.utils import to_absolute_path
 from omegaconf import DictConfig
 import pandas as pd
 
-from src.experiments.io import save_dataframe_csv, save_dataframe_json, save_json
+from src.experiments.io import (
+    save_dataframe_csv,
+    save_dataframe_json,
+    save_json,
+)
 
 
 def _latest_run_dir(track_root: Path) -> Path | None:
@@ -41,8 +45,12 @@ def export_paper_tables(cfg: DictConfig) -> None:
     out_dir = out_root / export_id
     out_dir.mkdir(parents=True, exist_ok=False)
 
-    full_cycle_dir = _latest_run_dir(artifacts_root / "full_cycle_feature_analysis")
-    charge_dir = _latest_run_dir(artifacts_root / "charge_only_feature_analysis")
+    full_cycle_dir = _latest_run_dir(
+        artifacts_root / "full_cycle_feature_analysis"
+    )
+    charge_dir = _latest_run_dir(
+        artifacts_root / "charge_only_feature_analysis"
+    )
     uncertainty_dir = _latest_run_dir(artifacts_root / "uncertainty")
     diagnostics_dir = _latest_run_dir(artifacts_root / "diagnostics")
     robustness_dir = _latest_run_dir(artifacts_root / "protocol_robustness")
@@ -71,14 +79,18 @@ def export_paper_tables(cfg: DictConfig) -> None:
     ]:
         if run_dir is None:
             continue
-        ranking_df = _safe_read_csv(run_dir / "feature_ranking_permutation.csv")
+        ranking_df = _safe_read_csv(
+            run_dir / "feature_ranking_permutation.csv"
+        )
         if ranking_df.empty:
             continue
         top5_df = ranking_df.head(5).copy()
         top5_df["track"] = label
         feature_rows.append(top5_df)
     table_feature_df = (
-        pd.concat(feature_rows, ignore_index=True) if feature_rows else pd.DataFrame()
+        pd.concat(feature_rows, ignore_index=True)
+        if feature_rows
+        else pd.DataFrame()
     )
 
     # Uncertainty table.
@@ -97,8 +109,12 @@ def export_paper_tables(cfg: DictConfig) -> None:
 
     save_dataframe_csv(table_main_df, out_dir / "table_main_comparison.csv")
     save_dataframe_json(table_main_df, out_dir / "table_main_comparison.json")
-    save_dataframe_csv(table_feature_df, out_dir / "table_feature_analysis.csv")
-    save_dataframe_json(table_feature_df, out_dir / "table_feature_analysis.json")
+    save_dataframe_csv(
+        table_feature_df, out_dir / "table_feature_analysis.csv"
+    )
+    save_dataframe_json(
+        table_feature_df, out_dir / "table_feature_analysis.json"
+    )
     save_dataframe_csv(uncertainty_df, out_dir / "table_uncertainty.csv")
     save_dataframe_json(uncertainty_df, out_dir / "table_uncertainty.json")
     save_dataframe_csv(robustness_df, out_dir / "table_robustness.csv")
@@ -108,11 +124,17 @@ def export_paper_tables(cfg: DictConfig) -> None:
         "export_id": export_id,
         "artifacts_root": str(artifacts_root),
         "source_runs": {
-            "full_cycle_feature_analysis": str(full_cycle_dir) if full_cycle_dir else None,
-            "charge_only_feature_analysis": str(charge_dir) if charge_dir else None,
+            "full_cycle_feature_analysis": str(full_cycle_dir)
+            if full_cycle_dir
+            else None,
+            "charge_only_feature_analysis": str(charge_dir)
+            if charge_dir
+            else None,
             "uncertainty": str(uncertainty_dir) if uncertainty_dir else None,
             "diagnostics": str(diagnostics_dir) if diagnostics_dir else None,
-            "protocol_robustness": str(robustness_dir) if robustness_dir else None,
+            "protocol_robustness": str(robustness_dir)
+            if robustness_dir
+            else None,
         },
     }
     save_json(export_summary, out_dir / "export_summary.json")
@@ -120,4 +142,3 @@ def export_paper_tables(cfg: DictConfig) -> None:
 
 if __name__ == "__main__":
     export_paper_tables()
-

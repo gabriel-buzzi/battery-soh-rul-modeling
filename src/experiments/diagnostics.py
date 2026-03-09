@@ -17,7 +17,9 @@ def build_error_cells_summary(
 
     cell_rows: list[dict] = []
     for cell_id, cell_df in work_df.groupby("cell"):
-        rmse = float(root_mean_squared_error(cell_df["y_true"], cell_df["y_pred"]))
+        rmse = float(
+            root_mean_squared_error(cell_df["y_true"], cell_df["y_pred"])
+        )
         mae = float(mean_absolute_error(cell_df["y_true"], cell_df["y_pred"]))
         bias = float(cell_df["error"].mean())
         max_abs_error = float(cell_df["abs_error"].max())
@@ -25,12 +27,13 @@ def build_error_cells_summary(
 
         # Region concentration along cell life (cycle position).
         if cell_df["cycle"].max() > cell_df["cycle"].min():
-            cycle_pos = (
-                (cell_df["cycle"] - cell_df["cycle"].min())
-                / (cell_df["cycle"].max() - cell_df["cycle"].min())
+            cycle_pos = (cell_df["cycle"] - cell_df["cycle"].min()) / (
+                cell_df["cycle"].max() - cell_df["cycle"].min()
             )
         else:
-            cycle_pos = pd.Series([0.0] * cell_df.shape[0], index=cell_df.index)
+            cycle_pos = pd.Series(
+                [0.0] * cell_df.shape[0], index=cell_df.index
+            )
 
         region = pd.Series("mid_life", index=cell_df.index)
         region.loc[cycle_pos <= 0.33] = "early_life"
@@ -70,9 +73,17 @@ def build_error_cells_summary(
     diagnostics_summary = {
         "top_n_cells": int(top_n_cells),
         "difficult_cells": difficult_cells,
-        "mean_rmse_difficult": float(difficult_df["rmse"].mean()) if not difficult_df.empty else 0.0,
-        "mean_rmse_rest": float(rest_df["rmse"].mean()) if not rest_df.empty else 0.0,
-        "mean_mae_difficult": float(difficult_df["mae"].mean()) if not difficult_df.empty else 0.0,
-        "mean_mae_rest": float(rest_df["mae"].mean()) if not rest_df.empty else 0.0,
+        "mean_rmse_difficult": float(difficult_df["rmse"].mean())
+        if not difficult_df.empty
+        else 0.0,
+        "mean_rmse_rest": float(rest_df["rmse"].mean())
+        if not rest_df.empty
+        else 0.0,
+        "mean_mae_difficult": float(difficult_df["mae"].mean())
+        if not difficult_df.empty
+        else 0.0,
+        "mean_mae_rest": float(rest_df["mae"].mean())
+        if not rest_df.empty
+        else 0.0,
     }
     return summary_df, diagnostics_summary

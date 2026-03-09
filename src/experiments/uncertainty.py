@@ -47,7 +47,9 @@ def run_repeated_seed_uncertainty(
     repeated_predictions_df = pd.concat(repeated_rows, ignore_index=True)
 
     grouped = (
-        repeated_predictions_df.groupby(["cell", "cycle", "y_true"], as_index=False)
+        repeated_predictions_df.groupby(
+            ["cell", "cycle", "y_true"], as_index=False
+        )
         .agg(
             y_pred_mean=("y_pred", "mean"),
             y_pred_std=("y_pred", "std"),
@@ -81,7 +83,9 @@ def run_repeated_seed_uncertainty(
     region_df = grouped.copy()
     region_df["region"] = "mid_life"
     region_df.loc[region_df["y_true"] <= near_threshold, "region"] = "near_eol"
-    region_df.loc[region_df["y_true"] >= long_threshold, "region"] = "long_life"
+    region_df.loc[region_df["y_true"] >= long_threshold, "region"] = (
+        "long_life"
+    )
 
     region_rows: list[dict] = []
     for region_name, region_data in region_df.groupby("region"):
@@ -97,16 +101,22 @@ def run_repeated_seed_uncertainty(
                 "mae_mean_prediction": float(metrics["mae"]),
                 "r2_mean_prediction": float(metrics["r2"]),
                 "mean_prediction_std": float(region_data["y_pred_std"].mean()),
-                "prediction_std_q90": float(region_data["y_pred_std"].quantile(0.90)),
+                "prediction_std_q90": float(
+                    region_data["y_pred_std"].quantile(0.90)
+                ),
             }
         )
-    uncertainty_by_region_df = pd.DataFrame(region_rows).sort_values(
-        "region"
-    ).reset_index(drop=True)
+    uncertainty_by_region_df = (
+        pd.DataFrame(region_rows).sort_values("region").reset_index(drop=True)
+    )
 
     uncertainty_summary["near_eol_threshold"] = near_threshold
     uncertainty_summary["long_life_threshold"] = long_threshold
     uncertainty_summary["near_eol_quantile"] = near_eol_quantile
     uncertainty_summary["long_life_quantile"] = long_life_quantile
 
-    return repeated_predictions_df, uncertainty_by_region_df, uncertainty_summary
+    return (
+        repeated_predictions_df,
+        uncertainty_by_region_df,
+        uncertainty_summary,
+    )

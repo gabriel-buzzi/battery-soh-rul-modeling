@@ -104,9 +104,7 @@ def validate_track_run_dir(run_dir: Path, track: str) -> list[str]:
             header = next(reader, [])
         missing_cols = [col for col in required_cols if col not in header]
         if missing_cols:
-            errors.append(
-                f"Missing columns in {file_name}: {missing_cols}"
-            )
+            errors.append(f"Missing columns in {file_name}: {missing_cols}")
 
     return errors
 

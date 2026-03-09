@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import csv
 import json
+from pathlib import Path
 import tempfile
 import unittest
-from pathlib import Path
 
 from src.experiments.artifact_contract import (
     validate_optimization_cache_dir,
@@ -25,6 +25,7 @@ class TestArtifactContract(unittest.TestCase):
     """Validate artifact contract checks on synthetic directories."""
 
     def test_uncertainty_artifacts_valid(self) -> None:
+        """Accept valid uncertainty run directory with all required artif."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             run_dir = Path(tmp_dir)
             _write_csv(
@@ -39,10 +40,13 @@ class TestArtifactContract(unittest.TestCase):
             )
             (run_dir / "uncertainty_summary.json").write_text(json.dumps({}))
 
-            errors = validate_track_run_dir(run_dir=run_dir, track="uncertainty")
+            errors = validate_track_run_dir(
+                run_dir=run_dir, track="uncertainty"
+            )
             self.assertEqual(errors, [])
 
     def test_feature_analysis_missing_file(self) -> None:
+        """Report error when required feature-analysis artif. are missing."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             run_dir = Path(tmp_dir)
             _write_csv(
@@ -54,9 +58,12 @@ class TestArtifactContract(unittest.TestCase):
             errors = validate_track_run_dir(
                 run_dir=run_dir, track="full_cycle_feature_analysis"
             )
-            self.assertTrue(any("Missing required file" in error for error in errors))
+            self.assertTrue(
+                any("Missing required file" in error for error in errors)
+            )
 
     def test_cache_contract(self) -> None:
+        """Accept cache directory when all required cache artifacts exist."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             cache_dir = Path(tmp_dir)
             for file_name in [

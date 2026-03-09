@@ -49,7 +49,8 @@ def resolve_feature_columns(
     if feature_view == "custom":
         if not custom_features:
             raise ValueError(
-                "feature_view='custom' requires a non-empty custom_features list."
+                "feature_view='custom' requires a non-empty"
+                "custom_features list."
             )
         return custom_features
 

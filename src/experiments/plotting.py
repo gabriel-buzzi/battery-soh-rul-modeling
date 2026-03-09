@@ -13,7 +13,9 @@ def plot_optimization_loss(
     output_path: Path,
 ) -> None:
     """Plot trial objective value evolution over optimization trials."""
-    x_col = "number" if "number" in optimization_history_df.columns else "trial"
+    x_col = (
+        "number" if "number" in optimization_history_df.columns else "trial"
+    )
     y_col = (
         "value"
         if "value" in optimization_history_df.columns
@@ -51,8 +53,12 @@ def plot_prediction_scatter(
     if not {"y_true", "y_pred"}.issubset(predictions_df.columns):
         return
 
-    min_val = min(predictions_df["y_true"].min(), predictions_df["y_pred"].min())
-    max_val = max(predictions_df["y_true"].max(), predictions_df["y_pred"].max())
+    min_val = min(
+        predictions_df["y_true"].min(), predictions_df["y_pred"].min()
+    )
+    max_val = max(
+        predictions_df["y_true"].max(), predictions_df["y_pred"].max()
+    )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(5.5, 5.5))
@@ -62,7 +68,9 @@ def plot_prediction_scatter(
         alpha=0.6,
         s=18,
     )
-    ax.plot([min_val, max_val], [min_val, max_val], linestyle="--", linewidth=1.2)
+    ax.plot(
+        [min_val, max_val], [min_val, max_val], linestyle="--", linewidth=1.2
+    )
     ax.set_title("Test Predictions: True vs Predicted")
     ax.set_xlabel("y_true")
     ax.set_ylabel("y_pred")

@@ -1,10 +1,12 @@
-#%%
+"""Quick notebook showing the difference between RUL in cycles vs. Ah."""
+
+# %%
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
 
-#%%
+# %%
 # Resolve repository root and input path.
 repo_root = Path.cwd()
 if not (repo_root / "notebooks").exists():
@@ -22,13 +24,12 @@ if not features_path.exists():
 features_df = pd.read_parquet(features_path)
 features_df.head()
 
-#%%
+# %%
 required_cols = {"cell", "cycle", "RUL", "RUL_THROUGHPUT"}
 missing_cols = required_cols - set(features_df.columns)
 if missing_cols:
     raise ValueError(
-        "Missing required columns for comparison plot: "
-        f"{sorted(missing_cols)}"
+        f"Missing required columns for comparison plot: {sorted(missing_cols)}"
     )
 
 # Set to a specific cell id if desired, e.g. "b2c32".
@@ -54,20 +55,20 @@ print(f"Example cell: {example_cell}")
 print(f"Number of cycles: {cell_df.shape[0]}")
 cell_df[["cell", "cycle", "RUL", "RUL_THROUGHPUT"]].head()
 
-#%%
+# %%
 fig, axes = plt.subplots(1, 2, figsize=(13, 4.5))
 ax1 = axes[0]
 ax2 = ax1.twinx()
 
 # Raw targets (different units).
-(l1, ) = ax1.plot(
+(l1,) = ax1.plot(
     cell_df["cycle"],
     cell_df["RUL"],
     label="RUL (cycles)",
     linewidth=2,
     c="C0",
 )
-(l2, ) = ax2.plot(
+(l2,) = ax2.plot(
     cell_df["cycle"],
     cell_df["RUL_THROUGHPUT"],
     label="RUL throughput (Ah)",

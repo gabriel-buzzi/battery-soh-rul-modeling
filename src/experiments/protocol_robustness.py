@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
+from sklearn.metrics import (
+    mean_absolute_error,
+    r2_score,
+    root_mean_squared_error,
+)
 
 from src.experiments.models import build_extratrees
 
@@ -28,9 +31,9 @@ def build_protocol_families(
         .agg(avg_charge_current=("charge_I_mean", "mean"))
         .copy()
     )
-    cell_stats_df["avg_charge_c_rate"] = (
-        cell_stats_df["avg_charge_current"].abs() / float(cells_rated_capacity)
-    )
+    cell_stats_df["avg_charge_c_rate"] = cell_stats_df[
+        "avg_charge_current"
+    ].abs() / float(cells_rated_capacity)
     # Use quantile bins with duplicate-edge handling.
     cell_stats_df["protocol_family"] = pd.qcut(
         cell_stats_df["avg_charge_c_rate"],
@@ -86,7 +89,11 @@ def run_protocol_family_holdout(
                 ),
             }
         )
-    return pd.DataFrame(rows).sort_values("held_out_family").reset_index(drop=True)
+    return (
+        pd.DataFrame(rows)
+        .sort_values("held_out_family")
+        .reset_index(drop=True)
+    )
 
 
 def summarize_protocol_robustness(results_df: pd.DataFrame) -> dict:

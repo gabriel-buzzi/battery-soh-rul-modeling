@@ -130,12 +130,16 @@ def optimize_extratrees_tpe(
         show_progress_bar=True,
     )
 
-    history_df = pd.DataFrame(trial_rows).sort_values("trial").reset_index(
-        drop=True
+    history_df = (
+        pd.DataFrame(trial_rows).sort_values("trial").reset_index(drop=True)
     )
     best_trial = study.best_trial
-    best_fold_metrics_df = pd.DataFrame(best_trial.user_attrs["cv_fold_metrics"])
-    best_aggregate_metrics = dict(best_trial.user_attrs["cv_aggregate_metrics"])
+    best_fold_metrics_df = pd.DataFrame(
+        best_trial.user_attrs["cv_fold_metrics"]
+    )
+    best_aggregate_metrics = dict(
+        best_trial.user_attrs["cv_aggregate_metrics"]
+    )
     return (
         study.best_params,
         history_df,

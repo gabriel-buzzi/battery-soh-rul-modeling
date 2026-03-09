@@ -141,8 +141,10 @@ def make_features(cfg: DictConfig) -> None:
             logger.warning("No valid cycles for cell file %s", cell_file.name)
             continue
 
-        cell_df = pd.DataFrame(cell_features).sort_values("cycle").reset_index(
-            drop=True
+        cell_df = (
+            pd.DataFrame(cell_features)
+            .sort_values("cycle")
+            .reset_index(drop=True)
         )
 
         # EoL defined by SOH threshold; keep cycles up to and including EoL.
@@ -155,7 +157,9 @@ def make_features(cfg: DictConfig) -> None:
         cell_df["RUL"] = eol_cycle - cell_df["cycle"]
 
         # Throughput-based target (remaining Ah throughput until EoL).
-        cell_df["throughput_ah_cumulative"] = cell_df["throughput_ah_cycle"].cumsum()
+        cell_df["throughput_ah_cumulative"] = cell_df[
+            "throughput_ah_cycle"
+        ].cumsum()
         throughput_at_eol = float(cell_df["throughput_ah_cumulative"].iloc[-1])
         cell_df["RUL_THROUGHPUT"] = (
             throughput_at_eol - cell_df["throughput_ah_cumulative"]
@@ -164,7 +168,9 @@ def make_features(cfg: DictConfig) -> None:
         features.append(cell_df)
 
     if not features:
-        raise ValueError("No features were extracted from processed cell files.")
+        raise ValueError(
+            "No features were extracted from processed cell files."
+        )
 
     features_df = pd.concat(features, ignore_index=True)
 
@@ -176,9 +182,12 @@ def make_features(cfg: DictConfig) -> None:
         compression="snappy",
         index=False,
     )
-    logger.info("Saved features to %s with shape %s", features_data_path, features_df.shape)
+    logger.info(
+        "Saved features to %s with shape %s",
+        features_data_path,
+        features_df.shape,
+    )
 
 
 if __name__ == "__main__":
     make_features()
-

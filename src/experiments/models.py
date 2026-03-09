@@ -28,4 +28,3 @@ def build_extratrees(
     model_params["random_state"] = random_seed
     model_params["n_jobs"] = n_jobs
     return ExtraTreesRegressor(**model_params)
-

@@ -125,12 +125,16 @@ def _load_cached_optimization(cache_dir: Path) -> tuple | None:
         "best_fold_metrics.csv",
         "best_aggregate_metrics.json",
     ]
-    if not all((cache_dir / file_name).exists() for file_name in required_files):
+    if not all(
+        (cache_dir / file_name).exists() for file_name in required_files
+    ):
         return None
 
     with open(cache_dir / "best_params.json", "r") as fp:
         best_params = json.load(fp)
-    optimization_history_df = pd.read_csv(cache_dir / "optimization_history.csv")
+    optimization_history_df = pd.read_csv(
+        cache_dir / "optimization_history.csv"
+    )
     best_fold_metrics_df = pd.read_csv(cache_dir / "best_fold_metrics.csv")
     with open(cache_dir / "best_aggregate_metrics.json", "r") as fp:
         best_aggregate_metrics = json.load(fp)
@@ -159,9 +163,15 @@ def _persist_cached_optimization(
         optimization_history_df,
         cache_dir / "optimization_history.json",
     )
-    save_dataframe_csv(best_fold_metrics_df, cache_dir / "best_fold_metrics.csv")
-    save_dataframe_json(best_fold_metrics_df, cache_dir / "best_fold_metrics.json")
-    save_json(best_aggregate_metrics, cache_dir / "best_aggregate_metrics.json")
+    save_dataframe_csv(
+        best_fold_metrics_df, cache_dir / "best_fold_metrics.csv"
+    )
+    save_dataframe_json(
+        best_fold_metrics_df, cache_dir / "best_fold_metrics.json"
+    )
+    save_json(
+        best_aggregate_metrics, cache_dir / "best_aggregate_metrics.json"
+    )
 
 
 def _get_or_run_optimization(
@@ -179,7 +189,9 @@ def _get_or_run_optimization(
         feature_columns=feature_columns,
         train_cells=train_cells,
     )
-    cache_root = _optimization_cache_dir(cfg=cfg, artifacts_root=artifacts_root)
+    cache_root = _optimization_cache_dir(
+        cfg=cfg, artifacts_root=artifacts_root
+    )
     cache_dir = cache_root / cache_key
 
     if cache_enabled:
@@ -512,17 +524,61 @@ def _run_uncertainty_track(
     artifacts_index = {
         "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
         "artifacts": [
-            {"path": "resolved_config.yaml", "role": "config", "format": "yaml"},
-            {"path": "best_params.json", "role": "model_selection", "format": "json"},
-            {"path": "optimization_history.csv", "role": "optimization_history", "format": "csv"},
-            {"path": "optimization_history.json", "role": "optimization_history", "format": "json"},
-            {"path": "predictions_repeated.csv", "role": "uncertainty", "format": "csv"},
-            {"path": "predictions_repeated.json", "role": "uncertainty", "format": "json"},
-            {"path": "uncertainty_by_region.csv", "role": "uncertainty", "format": "csv"},
-            {"path": "uncertainty_by_region.json", "role": "uncertainty", "format": "json"},
-            {"path": "uncertainty_summary.json", "role": "uncertainty", "format": "json"},
-            {"path": "run_metadata.json", "role": "run_metadata", "format": "json"},
-            {"path": "run_summary.json", "role": "run_summary", "format": "json"},
+            {
+                "path": "resolved_config.yaml",
+                "role": "config",
+                "format": "yaml",
+            },
+            {
+                "path": "best_params.json",
+                "role": "model_selection",
+                "format": "json",
+            },
+            {
+                "path": "optimization_history.csv",
+                "role": "optimization_history",
+                "format": "csv",
+            },
+            {
+                "path": "optimization_history.json",
+                "role": "optimization_history",
+                "format": "json",
+            },
+            {
+                "path": "predictions_repeated.csv",
+                "role": "uncertainty",
+                "format": "csv",
+            },
+            {
+                "path": "predictions_repeated.json",
+                "role": "uncertainty",
+                "format": "json",
+            },
+            {
+                "path": "uncertainty_by_region.csv",
+                "role": "uncertainty",
+                "format": "csv",
+            },
+            {
+                "path": "uncertainty_by_region.json",
+                "role": "uncertainty",
+                "format": "json",
+            },
+            {
+                "path": "uncertainty_summary.json",
+                "role": "uncertainty",
+                "format": "json",
+            },
+            {
+                "path": "run_metadata.json",
+                "role": "run_metadata",
+                "format": "json",
+            },
+            {
+                "path": "run_summary.json",
+                "role": "run_summary",
+                "format": "json",
+            },
         ],
     }
     save_json(artifacts_index, run_dir / "artifacts_index.json")
@@ -602,8 +658,12 @@ def _run_diagnostics_track(
     )
     save_dataframe_csv(predictions_df, run_dir / "predictions_test.csv")
     save_dataframe_json(predictions_df, run_dir / "predictions_test.json")
-    save_dataframe_csv(error_cells_summary_df, run_dir / "error_cells_summary.csv")
-    save_dataframe_json(error_cells_summary_df, run_dir / "error_cells_summary.json")
+    save_dataframe_csv(
+        error_cells_summary_df, run_dir / "error_cells_summary.csv"
+    )
+    save_dataframe_json(
+        error_cells_summary_df, run_dir / "error_cells_summary.json"
+    )
     save_json(diagnostics_summary, run_dir / "diagnostics_summary.json")
 
     metadata = collect_run_metadata(random_seed=int(cfg.random_seed))
@@ -626,17 +686,61 @@ def _run_diagnostics_track(
     artifacts_index = {
         "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
         "artifacts": [
-            {"path": "resolved_config.yaml", "role": "config", "format": "yaml"},
-            {"path": "best_params.json", "role": "model_selection", "format": "json"},
-            {"path": "optimization_history.csv", "role": "optimization_history", "format": "csv"},
-            {"path": "optimization_history.json", "role": "optimization_history", "format": "json"},
-            {"path": "predictions_test.csv", "role": "predictions", "format": "csv"},
-            {"path": "predictions_test.json", "role": "predictions", "format": "json"},
-            {"path": "error_cells_summary.csv", "role": "diagnostics", "format": "csv"},
-            {"path": "error_cells_summary.json", "role": "diagnostics", "format": "json"},
-            {"path": "diagnostics_summary.json", "role": "diagnostics", "format": "json"},
-            {"path": "run_metadata.json", "role": "run_metadata", "format": "json"},
-            {"path": "run_summary.json", "role": "run_summary", "format": "json"},
+            {
+                "path": "resolved_config.yaml",
+                "role": "config",
+                "format": "yaml",
+            },
+            {
+                "path": "best_params.json",
+                "role": "model_selection",
+                "format": "json",
+            },
+            {
+                "path": "optimization_history.csv",
+                "role": "optimization_history",
+                "format": "csv",
+            },
+            {
+                "path": "optimization_history.json",
+                "role": "optimization_history",
+                "format": "json",
+            },
+            {
+                "path": "predictions_test.csv",
+                "role": "predictions",
+                "format": "csv",
+            },
+            {
+                "path": "predictions_test.json",
+                "role": "predictions",
+                "format": "json",
+            },
+            {
+                "path": "error_cells_summary.csv",
+                "role": "diagnostics",
+                "format": "csv",
+            },
+            {
+                "path": "error_cells_summary.json",
+                "role": "diagnostics",
+                "format": "json",
+            },
+            {
+                "path": "diagnostics_summary.json",
+                "role": "diagnostics",
+                "format": "json",
+            },
+            {
+                "path": "run_metadata.json",
+                "role": "run_metadata",
+                "format": "json",
+            },
+            {
+                "path": "run_summary.json",
+                "role": "run_summary",
+                "format": "json",
+            },
         ],
     }
     save_json(artifacts_index, run_dir / "artifacts_index.json")
@@ -671,7 +775,9 @@ def _run_protocol_robustness_track(
 
     family_df = build_protocol_families(
         features_df=features_df,
-        cells_rated_capacity=float(cfg.protocol_robustness.cells_rated_capacity),
+        cells_rated_capacity=float(
+            cfg.protocol_robustness.cells_rated_capacity
+        ),
         n_families=int(cfg.protocol_robustness.n_families),
     )
     protocol_results_df = run_protocol_family_holdout(
@@ -681,7 +787,7 @@ def _run_protocol_robustness_track(
         best_params=best_params,
         n_jobs=int(cfg.model.n_jobs),
         family_df=family_df,
-        random_seed=int(cfg.random_seed)
+        random_seed=int(cfg.random_seed),
     )
     protocol_summary = summarize_protocol_robustness(protocol_results_df)
 
@@ -703,8 +809,12 @@ def _run_protocol_robustness_track(
         optimization_history_df,
         run_dir / "optimization_history.json",
     )
-    save_dataframe_csv(protocol_results_df, run_dir / "protocol_family_results.csv")
-    save_dataframe_json(protocol_results_df, run_dir / "protocol_family_results.json")
+    save_dataframe_csv(
+        protocol_results_df, run_dir / "protocol_family_results.csv"
+    )
+    save_dataframe_json(
+        protocol_results_df, run_dir / "protocol_family_results.json"
+    )
     save_json(protocol_summary, run_dir / "protocol_robustness_summary.json")
 
     metadata = collect_run_metadata(random_seed=int(cfg.random_seed))
@@ -727,15 +837,51 @@ def _run_protocol_robustness_track(
     artifacts_index = {
         "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
         "artifacts": [
-            {"path": "resolved_config.yaml", "role": "config", "format": "yaml"},
-            {"path": "best_params.json", "role": "model_selection", "format": "json"},
-            {"path": "optimization_history.csv", "role": "optimization_history", "format": "csv"},
-            {"path": "optimization_history.json", "role": "optimization_history", "format": "json"},
-            {"path": "protocol_family_results.csv", "role": "robustness", "format": "csv"},
-            {"path": "protocol_family_results.json", "role": "robustness", "format": "json"},
-            {"path": "protocol_robustness_summary.json", "role": "robustness", "format": "json"},
-            {"path": "run_metadata.json", "role": "run_metadata", "format": "json"},
-            {"path": "run_summary.json", "role": "run_summary", "format": "json"},
+            {
+                "path": "resolved_config.yaml",
+                "role": "config",
+                "format": "yaml",
+            },
+            {
+                "path": "best_params.json",
+                "role": "model_selection",
+                "format": "json",
+            },
+            {
+                "path": "optimization_history.csv",
+                "role": "optimization_history",
+                "format": "csv",
+            },
+            {
+                "path": "optimization_history.json",
+                "role": "optimization_history",
+                "format": "json",
+            },
+            {
+                "path": "protocol_family_results.csv",
+                "role": "robustness",
+                "format": "csv",
+            },
+            {
+                "path": "protocol_family_results.json",
+                "role": "robustness",
+                "format": "json",
+            },
+            {
+                "path": "protocol_robustness_summary.json",
+                "role": "robustness",
+                "format": "json",
+            },
+            {
+                "path": "run_metadata.json",
+                "role": "run_metadata",
+                "format": "json",
+            },
+            {
+                "path": "run_summary.json",
+                "role": "run_summary",
+                "format": "json",
+            },
         ],
     }
     save_json(artifacts_index, run_dir / "artifacts_index.json")
@@ -784,7 +930,8 @@ def run_experiment(cfg: DictConfig) -> None:
     )
 
     logger.info(
-        "Split summary: train_cells=%d test_cells=%d train_rows=%d test_rows=%d",
+        "Split summary: train_cells=%d test_cells=%d"
+        "train_rows=%d test_rows=%d",
         len(train_cells),
         len(test_cells),
         train_df.shape[0],
@@ -794,7 +941,9 @@ def run_experiment(cfg: DictConfig) -> None:
     if str(cfg.track) == "full_cycle_feature_analysis":
         full_columns = FULL_CYCLE_FEATURE_COLUMNS.copy()
         full_no_temp_columns = [
-            col for col in full_columns if col not in TEMPERATURE_FEATURE_COLUMNS
+            col
+            for col in full_columns
+            if col not in TEMPERATURE_FEATURE_COLUMNS
         ]
         _run_feature_analysis_track(
             cfg=cfg,
@@ -808,7 +957,9 @@ def run_experiment(cfg: DictConfig) -> None:
 
     if str(cfg.track) == "charge_only_feature_analysis":
         charge_columns = CHARGE_FEATURE_COLUMNS.copy()
-        charge_temp_columns = [f"charge_{col}" for col in TEMPERATURE_FEATURE_COLUMNS]
+        charge_temp_columns = [
+            f"charge_{col}" for col in TEMPERATURE_FEATURE_COLUMNS
+        ]
         charge_no_temp_columns = [
             col for col in charge_columns if col not in charge_temp_columns
         ]
