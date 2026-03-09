@@ -1,0 +1,62 @@
+track: full_cycle
+random_seed: 42
+target: RUL_THROUGHPUT # SOH, RUL, RUL_THROUGHPUT
+
+data:
+  features_data_path: ../data/interim/features.parquet
+  split_dir: ../results/experiments/splits
+  train_cells_proportion: 0.8
+  force_recreate_split: false
+
+features:
+  view: full_all # full_all | charge_all | full_plus_charge_all | no_temperature | custom
+  custom_list: []
+
+cv:
+  n_splits: 5
+
+model:
+  n_jobs: 4
+
+optimize:
+  n_trials: 10
+
+optimization_cache:
+  enabled: true
+  dir: null # if null, defaults to <artifacts.root_dir>/_optimization_cache
+
+feature_analysis:
+  ranking_seeds: [42, 52, 62]
+  k_values: [16, 12, 8, 6, 4, 2]
+  selected_k: heuristics # heuristics or explicit integer k
+
+uncertainty:
+  n_repeats: 8
+  seeds: [] # if empty, uses random_seed + [0..n_repeats-1]
+  near_eol_quantile: 0.20
+  long_life_quantile: 0.80
+
+diagnostics:
+  top_n_cells: 10
+
+protocol_robustness:
+  n_families: 4
+  cells_rated_capacity: 1.1
+
+artifacts:
+  root_dir: ./results/experiments
+  run_name: null
+
+debug_plots:
+  enabled: true
+
+defaults:
+  - _self_
+  - tracks: full_cycle
+
+hydra:
+  run:
+    dir: .
+  output_subdir: null
+  job:
+    chdir: false

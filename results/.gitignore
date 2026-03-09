@@ -2,3 +2,4 @@ optimization/**/*.pkl
 optimization/**/*.png
 optimization/**/*.joblib
 evaluation/**/*.csv
+experiments

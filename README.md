@@ -79,44 +79,157 @@ This project uses [Pixi](https://pixi.sh/latest/) to guarantee a reproducible sc
 curl -fsSL https://pixi.sh/install.sh | sh
 pixi install
 pixi shell
-
 ```
 
 ### 2. Data Pipeline Execution
 
-Download the [Severson et al. dataset](https://data.matr.io/1/projects/5c48dd2bc625d700019f3204) (three batches `.mat` files) to `data/external/`.
+Download the [Severson et al. dataset](https://data.matr.io/1/projects/5c48dd2bc625d700019f3204) (three batches `.mat` files) to `data/raw/`.
 
 ```bash
-# 1. Ingest and convert to HDF5
-python src/data/load_data.py
+# 1) Ingest .mat files into a unified HDF5
+python -m src.data.load_data
 
-# 2. Preprocess signals (Resampling & Smoothing)
-python src/data/build_data.py
+# 2) Build cycle-level processed parquet per cell
+python -m src.data.build_data
 
-# 3. Extract Statistical Features
-python src/data/make_features.py
-
+# 3) Extract full-cycle + charge-only features and targets
+#    (SOH, RUL, RUL_THROUGHPUT)
+python -m src.data.make_features
 ```
 
-### 3. Running Experiments
+### 3. Manual Track Execution (New Experiments Pipeline)
 
-You can reproduce the specific optimization runs used in the paper or launch new explorations.
+All revision experiments are run manually track-by-track via `src.experiments.runner`.
+This is the recommended flow for paper writing because each step generates explicit artifacts you can inspect before moving to the next one.
+
+#### 3.1 Baseline Full-Cycle Training/Evaluation
+
+What it does:
+- creates/reuses deterministic train/test cell split;
+- runs (or reuses cached) optimization;
+- trains on train split and evaluates on held-out test split;
+- exports paper-ready summaries and diagnostics artifacts.
 
 ```bash
-# A. Feature Selection (Recursive Feature Elimination)
-python src/modeling/feature_importance.py
-
-# B. Run Bayesian Optimization (Single Model)
-python src/modeling/optimization.py
-
-# C. Run Full Experimental Grid (Multirun)
-# This utilizes Joblib to parallelize training across available cores
-python src/modeling/optimization.py -m
-
-# D. Final Evaluation on Test Set
-python src/modeling/evaluation.py
-
+python -m src.experiments.runner \
+  tracks=full_cycle \
+  target=SOH
 ```
+
+Main outputs:
+- `results/experiments/full_cycle/<run_id>/run_summary.json`
+- `table_main_metrics.csv/json`
+- `predictions_test.csv/json`
+
+#### 3.2 Full-Cycle Feature Analysis
+
+What it does:
+- permutation and intrinsic ranking;
+- top-k sweep with cached full-feature baseline row;
+- heuristic/manual `selected_k`;
+- leave-one-out (LOO) inside selected subset;
+- no-temperature comparison;
+- top-k plots for RMSE and relative gap.
+
+```bash
+python -m src.experiments.runner \
+  tracks=full_cycle_feature_analysis \
+  target=SOH
+```
+
+Main outputs:
+- `feature_ranking_permutation.csv/json`
+- `topk_sweep_metrics.csv/json`
+- `loo_metrics.csv/json`
+- `no_temp_metrics.json`
+- `topk_vs_val_rmse.png`
+- `topk_vs_relative_gap.png`
+
+#### 3.3 Charge-Only Feature Analysis
+
+What it does:
+- same analysis flow as full-cycle, but using `charge_*` features only.
+
+```bash
+python -m src.experiments.runner \
+  tracks=charge_only_feature_analysis \
+  target=SOH
+```
+
+Main outputs:
+- same artifact interface as full-cycle feature analysis.
+
+#### 3.4 Uncertainty Analysis
+
+What it does:
+- repeated-seed retraining with fixed split and fixed optimized hyperparameters;
+- aggregates sample-level uncertainty and region summaries.
+
+```bash
+python -m src.experiments.runner \
+  tracks=uncertainty \
+  target=SOH
+```
+
+Main outputs:
+- `predictions_repeated.csv/json`
+- `uncertainty_summary.json`
+- `uncertainty_by_region.csv/json`
+
+#### 3.5 Difficult-Cell Diagnostics
+
+What it does:
+- computes per-cell error diagnostics;
+- identifies difficult cells and where error concentrates along life.
+
+```bash
+python -m src.experiments.runner \
+  tracks=diagnostics \
+  target=SOH
+```
+
+Main outputs:
+- `error_cells_summary.csv/json`
+- `diagnostics_summary.json`
+
+#### 3.6 Protocol-Family Robustness
+
+What it does:
+- builds protocol families from average charging C-rate;
+- performs leave-one-family-out robustness evaluation.
+
+```bash
+python -m src.experiments.runner \
+  tracks=protocol_robustness \
+  target=SOH \
+  features.view=charge_all
+```
+
+Main outputs:
+- `protocol_family_results.csv/json`
+- `protocol_robustness_summary.json`
+
+#### 3.7 Export Manuscript-Ready Tables
+
+What it does:
+- collects latest outputs from relevant tracks;
+- writes merged tables under `results/paper_tables/<export_id>/`.
+
+```bash
+python -m src.experiments.export_paper_tables
+```
+
+Main outputs:
+- `table_main_comparison.csv/json`
+- `table_feature_analysis.csv/json`
+- `table_uncertainty.csv/json`
+- `table_robustness.csv/json`
+
+### 4. Notes on Reproducibility and Caching
+
+- Optimization cache is enabled by default. If target, feature space, split, or optimization settings do not change, optimization results are reused automatically.
+- Split files are persisted under `results/experiments/splits/`; keep them stable to compare runs fairly.
+- For full reproducibility in papers, cite `run_summary.json` and `artifacts_index.json` from each run directory.
 
 ## 📄 Scientific Context
 
