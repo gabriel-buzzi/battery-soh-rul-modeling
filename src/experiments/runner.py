@@ -681,6 +681,7 @@ def _run_protocol_robustness_track(
         best_params=best_params,
         n_jobs=int(cfg.model.n_jobs),
         family_df=family_df,
+        random_seed=int(cfg.random_seed)
     )
     protocol_summary = summarize_protocol_robustness(protocol_results_df)
 

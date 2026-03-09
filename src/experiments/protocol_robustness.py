@@ -32,11 +32,9 @@ def build_protocol_families(
         cell_stats_df["avg_charge_current"].abs() / float(cells_rated_capacity)
     )
     # Use quantile bins with duplicate-edge handling.
-    labels = [f"family_{idx + 1}" for idx in range(n_families)]
     cell_stats_df["protocol_family"] = pd.qcut(
         cell_stats_df["avg_charge_c_rate"],
         q=n_families,
-        labels=labels,
         duplicates="drop",
     ).astype(str)
     return cell_stats_df
@@ -49,6 +47,7 @@ def run_protocol_family_holdout(
     best_params: dict,
     n_jobs: int,
     family_df: pd.DataFrame,
+    random_seed: int,
 ) -> pd.DataFrame:
     """Hold out one protocol family at a time and evaluate performance."""
     merged_df = features_df.merge(
@@ -66,7 +65,7 @@ def run_protocol_family_holdout(
 
         model = build_extratrees(
             params=best_params,
-            random_seed=42,
+            random_seed=random_seed,
             n_jobs=n_jobs,
         )
         model.fit(train_df[feature_columns], train_df[target])
