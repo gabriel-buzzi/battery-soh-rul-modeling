@@ -195,7 +195,7 @@ Main outputs:
 #### 3.6 Protocol-Family Robustness
 
 What it does:
-- builds protocol families from average charging C-rate;
+- builds protocol families from max charging C-rate bins + rest presence inferred from protocol labels;
 - performs leave-one-family-out robustness evaluation.
 
 ```bash

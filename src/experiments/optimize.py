@@ -16,6 +16,60 @@ OBJECTIVE_NAME = "val_rmse_plus_relative_gap"
 OBJECTIVE_FORMULA = (
     "objective = RMSE_val + abs(RMSE_train - RMSE_val) / RMSE_val"
 )
+SEARCH_SPACE_SIGNATURE = {
+    "n_estimators": {"type": "int", "low": 50, "high": 150},
+    "criterion": {"type": "fixed", "value": "squared_error"},
+    "max_depth": {"type": "int", "low": 3, "high": 20},
+    "min_samples_split": {"type": "int", "low": 2, "high": 20},
+    "min_samples_leaf": {"type": "int", "low": 1, "high": 10},
+    "max_features": {
+        "type": "categorical",
+        "choices": ["sqrt", "log2", None],
+    },
+}
+
+
+def _sample_trial_params_from_signature(
+    trial: optuna.Trial, search_space: dict[str, dict[str, Any]]
+) -> dict[str, Any]:
+    """Sample trial parameters from a declarative search-space signature."""
+    params: dict[str, Any] = {}
+    for name, spec in search_space.items():
+        spec_type = spec["type"]
+        if spec_type == "int":
+            params[name] = trial.suggest_int(
+                name,
+                int(spec["low"]),
+                int(spec["high"]),
+                step=int(spec.get("step", 1)),
+                log=bool(spec.get("log", False)),
+            )
+            continue
+        if spec_type == "float":
+            params[name] = trial.suggest_float(
+                name,
+                float(spec["low"]),
+                float(spec["high"]),
+                step=(
+                    float(spec["step"])
+                    if spec.get("step") is not None
+                    else None
+                ),
+                log=bool(spec.get("log", False)),
+            )
+            continue
+        if spec_type == "categorical":
+            params[name] = trial.suggest_categorical(
+                name, list(spec["choices"])
+            )
+            continue
+        if spec_type == "fixed":
+            params[name] = spec["value"]
+            continue
+        raise ValueError(
+            f"Unsupported search-space type='{spec_type}' for parameter '{name}'"
+        )
+    return params
 
 
 def optimize_extratrees_tpe(
@@ -36,17 +90,9 @@ def optimize_extratrees_tpe(
     trial_rows: list[dict[str, Any]] = []
 
     def objective(trial: optuna.Trial) -> float:
-        trial_params = {
-            "n_estimators": trial.suggest_int("n_estimators", 50, 150),
-            "criterion": "squared_error",
-            "max_depth": trial.suggest_int("max_depth", 3, 20),
-            "min_samples_split": trial.suggest_int("min_samples_split", 2, 20),
-            "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 10),
-            "max_features": trial.suggest_categorical(
-                "max_features",
-                ["sqrt", "log2", None],
-            ),
-        }
+        trial_params = _sample_trial_params_from_signature(
+            trial=trial, search_space=SEARCH_SPACE_SIGNATURE
+        )
 
         model = build_extratrees(
             params=trial_params,

@@ -36,6 +36,7 @@ from src.experiments.models import build_extratrees
 from src.experiments.optimize import (
     OBJECTIVE_FORMULA,
     OBJECTIVE_NAME,
+    SEARCH_SPACE_SIGNATURE,
     optimize_extratrees_tpe,
 )
 from src.experiments.plotting import (
@@ -113,6 +114,7 @@ def _optimization_cache_key(
         "opt_n_trials": int(cfg.optimize.n_trials),
         "objective_name": OBJECTIVE_NAME,
         "objective_formula": OBJECTIVE_FORMULA,
+        "search_space_signature": SEARCH_SPACE_SIGNATURE,
         "model_n_jobs": int(cfg.model.n_jobs),
     }
     return _stable_json_hash(payload)
@@ -152,6 +154,7 @@ def _persist_cached_optimization(
     optimization_history_df: pd.DataFrame,
     best_fold_metrics_df: pd.DataFrame,
     best_aggregate_metrics: dict,
+    optimization_metadata: dict[str, Any],
 ) -> None:
     cache_dir.mkdir(parents=True, exist_ok=True)
     save_json(best_params, cache_dir / "best_params.json")
@@ -171,6 +174,9 @@ def _persist_cached_optimization(
     )
     save_json(
         best_aggregate_metrics, cache_dir / "best_aggregate_metrics.json"
+    )
+    save_json(
+        optimization_metadata, cache_dir / "optimization_metadata.json"
     )
 
 
@@ -193,11 +199,35 @@ def _get_or_run_optimization(
         cfg=cfg, artifacts_root=artifacts_root
     )
     cache_dir = cache_root / cache_key
+    optimization_metadata = {
+        "target": str(cfg.target),
+        "feature_view": str(cfg.features.view),
+        "feature_columns": feature_columns,
+        "n_features": len(feature_columns),
+        "n_train_cells": len(train_cells),
+        "random_seed": int(cfg.random_seed),
+        "cv_n_splits": int(cfg.cv.n_splits),
+        "opt_n_trials": int(cfg.optimize.n_trials),
+        "model_n_jobs": int(cfg.model.n_jobs),
+        "objective_name": OBJECTIVE_NAME,
+        "objective_formula": OBJECTIVE_FORMULA,
+        "search_space_signature": SEARCH_SPACE_SIGNATURE,
+    }
 
     if cache_enabled:
         cached = _load_cached_optimization(cache_dir=cache_dir)
         if cached is not None:
-            logger.info("Loaded cached optimization from %s", cache_dir)
+            metadata_path = cache_dir / "optimization_metadata.json"
+            if metadata_path.exists():
+                logger.info(
+                    "Loaded cached optimization from %s with metadata",
+                    cache_dir,
+                )
+            else:
+                logger.info(
+                    "Loaded cached optimization from %s (metadata file missing)",
+                    cache_dir,
+                )
             return cached
 
     result = optimize_extratrees_tpe(
@@ -216,18 +246,68 @@ def _get_or_run_optimization(
             optimization_history_df=result[1],
             best_fold_metrics_df=result[2],
             best_aggregate_metrics=result[3],
+            optimization_metadata=optimization_metadata,
         )
         logger.info("Persisted optimization cache at %s", cache_dir)
     return result
 
 
-def _select_k_with_heuristics(topk_sweep_df: pd.DataFrame) -> int:
-    """Select k using validation RMSE, then relative gap, then smallest k."""
-    ordered = topk_sweep_df.sort_values(
-        by=["val_rmse_mean", "relative_gap_mean", "k"],
-        ascending=[True, True, True],
-    ).reset_index(drop=True)
-    return int(ordered.iloc[0]["k"])
+def _select_k_with_heuristics(
+    topk_sweep_df: pd.DataFrame,
+    allowed_k_values: list[int],
+    max_val_rmse_increase_pct: float = 0.10,
+) -> int:
+    """Select the smallest allowed k within a max validation-RMSE increase."""
+    if not allowed_k_values:
+        raise ValueError("allowed_k_values is empty.")
+
+    baseline_rows = topk_sweep_df[
+        topk_sweep_df["val_rmse_delta_from_baseline"].abs() < 1e-12
+    ]
+    if baseline_rows.empty:
+        baseline_val_rmse = float(
+            topk_sweep_df.sort_values("k", ascending=False)
+            .iloc[0]["val_rmse_mean"]
+        )
+        logger.warning(
+            "Baseline row not found in top-k sweep; using largest-k row as baseline (val_rmse=%.6f).",
+            baseline_val_rmse,
+        )
+    else:
+        baseline_val_rmse = float(baseline_rows.iloc[0]["val_rmse_mean"])
+
+    max_allowed_val_rmse = baseline_val_rmse * (
+        1.0 + float(max_val_rmse_increase_pct)
+    )
+    allowed_df = topk_sweep_df[topk_sweep_df["k"].isin(allowed_k_values)].copy()
+    eligible_df = allowed_df[
+        allowed_df["val_rmse_mean"] <= max_allowed_val_rmse
+    ].copy()
+
+    if not eligible_df.empty:
+        selected_k = int(eligible_df.sort_values("k", ascending=True).iloc[0]["k"])
+        logger.info(
+            "Heuristic k-selection: baseline_val_rmse=%.6f threshold=%.6f eligible=%d selected_k=%d",
+            baseline_val_rmse,
+            max_allowed_val_rmse,
+            int(eligible_df.shape[0]),
+            selected_k,
+        )
+        return selected_k
+
+    fallback_row = allowed_df.sort_values(
+        by=["val_rmse_mean", "k"],
+        ascending=[True, True],
+    ).iloc[0]
+    fallback_k = int(fallback_row["k"])
+    logger.warning(
+        "No k within %.1f%% baseline RMSE increase; fallback to best val_rmse k=%d (val_rmse=%.6f baseline=%.6f).",
+        float(max_val_rmse_increase_pct) * 100.0,
+        fallback_k,
+        float(fallback_row["val_rmse_mean"]),
+        baseline_val_rmse,
+    )
+    return fallback_k
 
 
 def _run_feature_analysis_track(
@@ -238,6 +318,14 @@ def _run_feature_analysis_track(
     base_feature_columns: list[str],
     no_temp_feature_columns: list[str],
 ) -> None:
+    logger.info(
+        "Starting feature-analysis track: target=%s base_features=%d no_temp_features=%d train_rows=%d train_cells=%d",
+        str(cfg.target),
+        len(base_feature_columns),
+        len(no_temp_feature_columns),
+        int(train_df.shape[0]),
+        int(train_df["cell"].nunique()),
+    )
     validate_required_columns(
         features_df=train_df,
         required_columns=[cfg.target, *base_feature_columns],
@@ -261,6 +349,11 @@ def _run_feature_analysis_track(
         feature_columns=base_feature_columns,
         train_cells=train_cells,
     )
+    logger.info(
+        "Feature-analysis optimization ready: best_params=%d trials=%d",
+        len(best_params),
+        int(optimization_history_df.shape[0]),
+    )
 
     permutation_df, intrinsic_df = compute_feature_rankings(
         X=X_train,
@@ -273,11 +366,21 @@ def _run_feature_analysis_track(
         n_jobs=int(cfg.model.n_jobs),
     )
     ranked_features = permutation_df["feature"].tolist()
+    logger.info(
+        "Feature rankings computed: ranked_features=%d seeds=%d",
+        len(ranked_features),
+        len(list(cfg.feature_analysis.ranking_seeds)),
+    )
 
     requested_k_values = [int(k) for k in cfg.feature_analysis.k_values]
     k_values = [
         k for k in requested_k_values if 1 <= k <= len(ranked_features)
     ]
+    logger.info(
+        "Running Top-K sweep: requested_k=%s valid_k=%s",
+        requested_k_values,
+        k_values,
+    )
     topk_sweep_df = run_topk_sweep(
         X=X_train,
         y=y_train,
@@ -292,8 +395,15 @@ def _run_feature_analysis_track(
     )
 
     selected_k_cfg = cfg.feature_analysis.selected_k
+    heuristic_max_val_rmse_increase_pct = float(
+        cfg.feature_analysis.max_val_rmse_increase_pct
+    )
     if selected_k_cfg == "heuristics" or selected_k_cfg is None:
-        selected_k = _select_k_with_heuristics(topk_sweep_df=topk_sweep_df)
+        selected_k = _select_k_with_heuristics(
+            topk_sweep_df=topk_sweep_df,
+            allowed_k_values=k_values,
+            max_val_rmse_increase_pct=heuristic_max_val_rmse_increase_pct,
+        )
         selection_mode = "heuristics"
     else:
         selected_k = int(selected_k_cfg)
@@ -304,6 +414,11 @@ def _run_feature_analysis_track(
             f"selected_k={selected_k} is invalid for available "
             f"k_values={k_values}"
         )
+    logger.info(
+        "Selected feature subset: mode=%s selected_k=%d",
+        selection_mode,
+        selected_k,
+    )
 
     selected_features = ranked_features[:selected_k]
     loo_df = run_leave_one_out(
@@ -315,6 +430,10 @@ def _run_feature_analysis_track(
         n_splits=int(cfg.cv.n_splits),
         random_seed=int(cfg.random_seed),
         n_jobs=int(cfg.model.n_jobs),
+    )
+    logger.info(
+        "Leave-one-out ablation complete: rows=%d",
+        int(loo_df.shape[0]),
     )
 
     no_temp_metrics = evaluate_feature_subset_cv(
@@ -331,6 +450,11 @@ def _run_feature_analysis_track(
     no_temp_metrics["target"] = str(cfg.target)
     no_temp_metrics["n_features"] = len(no_temp_feature_columns)
     no_temp_metrics["feature_view"] = str(cfg.features.view)
+    logger.info(
+        "No-temperature subset evaluated: n_features=%d val_rmse_mean=%.6f",
+        len(no_temp_feature_columns),
+        float(no_temp_metrics["val_rmse_mean"]),
+    )
 
     run_dir = create_run_dir(
         root_dir=artifacts_root,
@@ -375,6 +499,9 @@ def _run_feature_analysis_track(
         {
             "selected_k": selected_k,
             "selection_mode": selection_mode,
+            "heuristic_max_val_rmse_increase_pct": (
+                heuristic_max_val_rmse_increase_pct
+            ),
             "loo_executed": True,
             "selected_features": selected_features,
             "objective_name": OBJECTIVE_NAME,
@@ -408,6 +535,13 @@ def _run_uncertainty_track(
     train_cells: list[str],
     feature_columns: list[str],
 ) -> None:
+    logger.info(
+        "Starting uncertainty track: target=%s features=%d train_rows=%d test_rows=%d",
+        str(cfg.target),
+        len(feature_columns),
+        int(train_df.shape[0]),
+        int(test_df.shape[0]),
+    )
     X_train = train_df[feature_columns]
     y_train = train_df[cfg.target]
     groups_train = train_df["cell"].astype(str)
@@ -426,6 +560,11 @@ def _run_uncertainty_track(
         feature_columns=feature_columns,
         train_cells=train_cells,
     )
+    logger.info(
+        "Uncertainty optimization ready: best_params=%d trials=%d",
+        len(best_params),
+        int(optimization_history_df.shape[0]),
+    )
 
     configured_seeds = list(cfg.uncertainty.seeds)
     if configured_seeds:
@@ -433,13 +572,27 @@ def _run_uncertainty_track(
     else:
         n_repeats = int(cfg.uncertainty.n_repeats)
         seeds = [int(cfg.random_seed) + idx for idx in range(n_repeats)]
+    if seeds:
+        logger.info(
+            "Uncertainty seeds prepared: repeats=%d first_seed=%d last_seed=%d",
+            len(seeds),
+            seeds[0],
+            seeds[-1],
+        )
+    else:
+        logger.warning("Uncertainty seeds list is empty; no repeats configured.")
 
     X_test = test_df[feature_columns]
+    validate_required_columns(
+        features_df=test_df,
+        required_columns=["SOH"],
+    )
     test_metadata_df = pd.DataFrame(
         {
             "cell": test_df["cell"].astype(str),
             "cycle": test_df["cycle"],
             "y_true": test_df[cfg.target],
+            "soh_true": test_df["SOH"],
         }
     )
 
@@ -456,8 +609,12 @@ def _run_uncertainty_track(
         seeds=seeds,
         n_jobs=int(cfg.model.n_jobs),
         target=str(cfg.target),
-        near_eol_quantile=float(cfg.uncertainty.near_eol_quantile),
-        long_life_quantile=float(cfg.uncertainty.long_life_quantile),
+        region_basis=str(cfg.uncertainty.region_basis),
+    )
+    logger.info(
+        "Uncertainty estimates generated: predictions=%d regions=%d",
+        int(predictions_repeated_df.shape[0]),
+        int(uncertainty_by_region_df.shape[0]),
     )
 
     run_dir = create_run_dir(
@@ -598,6 +755,13 @@ def _run_diagnostics_track(
     train_cells: list[str],
     feature_columns: list[str],
 ) -> None:
+    logger.info(
+        "Starting diagnostics track: target=%s features=%d train_rows=%d test_rows=%d",
+        str(cfg.target),
+        len(feature_columns),
+        int(train_df.shape[0]),
+        int(test_df.shape[0]),
+    )
     X_train = train_df[feature_columns]
     y_train = train_df[cfg.target]
     groups_train = train_df["cell"].astype(str)
@@ -616,6 +780,11 @@ def _run_diagnostics_track(
         feature_columns=feature_columns,
         train_cells=train_cells,
     )
+    logger.info(
+        "Diagnostics optimization ready: best_params=%d trials=%d",
+        len(best_params),
+        int(optimization_history_df.shape[0]),
+    )
 
     model = build_extratrees(
         params=best_params,
@@ -624,6 +793,7 @@ def _run_diagnostics_track(
     )
     model.fit(X_train, y_train)
     y_pred = model.predict(test_df[feature_columns])
+    logger.info("Diagnostics predictions generated: test_predictions=%d", len(y_pred))
 
     predictions_df = pd.DataFrame(
         {
@@ -636,6 +806,10 @@ def _run_diagnostics_track(
     error_cells_summary_df, diagnostics_summary = build_error_cells_summary(
         predictions_df=predictions_df,
         top_n_cells=int(cfg.diagnostics.top_n_cells),
+    )
+    logger.info(
+        "Diagnostics summary built: top_error_cells=%d",
+        int(error_cells_summary_df.shape[0]),
     )
 
     run_dir = create_run_dir(
@@ -744,6 +918,10 @@ def _run_diagnostics_track(
         ],
     }
     save_json(artifacts_index, run_dir / "artifacts_index.json")
+    logger.info(
+        "Diagnostics track complete. artifacts_saved=%d",
+        len(artifacts_index["artifacts"]),
+    )
 
 
 def _run_protocol_robustness_track(
@@ -754,6 +932,12 @@ def _run_protocol_robustness_track(
     train_cells: list[str],
     feature_columns: list[str],
 ) -> None:
+    logger.info(
+        "Starting protocol-robustness track: target=%s features=%d train_rows=%d",
+        str(cfg.target),
+        len(feature_columns),
+        int(train_df.shape[0]),
+    )
     X_train = train_df[feature_columns]
     y_train = train_df[cfg.target]
     groups_train = train_df["cell"].astype(str)
@@ -772,13 +956,27 @@ def _run_protocol_robustness_track(
         feature_columns=feature_columns,
         train_cells=train_cells,
     )
+    logger.info(
+        "Protocol-robustness optimization ready: best_params=%d trials=%d",
+        len(best_params),
+        int(optimization_history_df.shape[0]),
+    )
 
     family_df = build_protocol_families(
         features_df=features_df,
         cells_rated_capacity=float(
             cfg.protocol_robustness.cells_rated_capacity
         ),
-        n_families=int(cfg.protocol_robustness.n_families),
+        max_c_rate_bins=int(cfg.protocol_robustness.max_c_rate_bins),
+        min_cells_per_family=int(
+            cfg.protocol_robustness.min_cells_per_family
+        ),
+    )
+    logger.info(
+        "Protocol families built: n_families=%d max_c_rate_bins=%d min_cells_per_family=%d",
+        int(family_df["protocol_family"].nunique()),
+        int(cfg.protocol_robustness.max_c_rate_bins),
+        int(cfg.protocol_robustness.min_cells_per_family),
     )
     protocol_results_df = run_protocol_family_holdout(
         features_df=features_df,
@@ -790,6 +988,10 @@ def _run_protocol_robustness_track(
         random_seed=int(cfg.random_seed),
     )
     protocol_summary = summarize_protocol_robustness(protocol_results_df)
+    logger.info(
+        "Protocol holdout complete: rows=%d",
+        int(protocol_results_df.shape[0]),
+    )
 
     run_dir = create_run_dir(
         root_dir=artifacts_root,
@@ -885,6 +1087,10 @@ def _run_protocol_robustness_track(
         ],
     }
     save_json(artifacts_index, run_dir / "artifacts_index.json")
+    logger.info(
+        "Protocol-robustness track complete. artifacts_saved=%d",
+        len(artifacts_index["artifacts"]),
+    )
 
 
 @hydra.main(

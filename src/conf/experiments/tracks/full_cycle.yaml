@@ -1,2 +1,4 @@
-# Reserved for full-cycle track specific overrides.
+track: full_cycle
 
+features:
+  view: full_all

@@ -142,9 +142,10 @@ Below these tracks are detailed.
 
 4. Use this diagnostic analysis to support the manuscript discussion on long-life cells, generalization limits and the practical meaning of the prediction errors.
 
-5. Add a protocol-family robustness experiment based on the average charging C-rate of each cell, computed over the charge process only and excluding the zero-current internal rest samples:
-   - compute the average charging C-rate of each cell;
-   - bin the cells into a small number of protocol families according to this average C-rate;
+5. Add a protocol-family robustness experiment based on protocol definition with pragmatic grouping:
+   - compute per-cell max charging C-rate over the charge process;
+   - infer whether the protocol contains explicit internal rest from the protocol label;
+   - bin cells by max charging C-rate and combine with rest-presence into protocol families, merging sparse groups when needed;
    - for this protocol-family experiment, use all cells of the dataset rather than the fixed train/test split adopted in the main tracks;
    - using the final selected full-cycle configuration and fixed hyperparameters, hold out one protocol family at a time;
    - train on the cells from the remaining protocol families;
@@ -260,7 +261,7 @@ Below these tracks are detailed.
    Coverage: addressed by the planned experiments.
    Planned evidence:
    - targeted diagnostic analysis will inspect whether large errors concentrate in specific protocol groups;
-   - a dedicated protocol-family robustness experiment will hold out one protocol family at a time, where protocol families are defined by average charging C-rate excluding zero-current rest samples;
+   - a dedicated protocol-family robustness experiment will hold out one protocol family at a time, where protocol families are defined by max charging C-rate bins combined with rest-presence inferred from protocol labels;
    - this experiment will be run for both the final selected full-cycle configuration and the final selected charge-only configuration.
    Expected response path:
    - the revised paper will not claim robustness to arbitrary unseen operational regimes, but it will provide a structured within-Severson robustness analysis across coarse charge-aggressiveness families.

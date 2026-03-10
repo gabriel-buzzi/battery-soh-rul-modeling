@@ -2,11 +2,26 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 
 from src.experiments.cv import regression_metrics
 from src.experiments.models import build_extratrees
+
+SOH_REGION_DEFINITION = {
+    "units": "percent",
+    "order": ["Early-Life", "Mid-Life", "Aged"],
+    "stages": {
+        "Early-Life": {"soh_min": 95.0, "soh_max": 100.0},
+        "Mid-Life": {"soh_min": 85.0, "soh_max": 95.0},
+        "Aged": {"soh_min": 80.0, "soh_max": 85.0},
+    },
+    "out_of_range_policy": (
+        "values_below_80_or_above_100_mapped_to_nearest_stage"
+    ),
+}
 
 
 def run_repeated_seed_uncertainty(
@@ -18,10 +33,18 @@ def run_repeated_seed_uncertainty(
     seeds: list[int],
     n_jobs: int,
     target: str,
-    near_eol_quantile: float = 0.20,
-    long_life_quantile: float = 0.80,
+    region_basis: str = "soh_true",
 ) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
-    """Run repeated-seed retraining and summarize prediction uncertainty."""
+    """Run repeated-seed retraining and summarize prediction uncertainty.
+
+    Regioning is defined by fixed SOH stages in SOH_REGION_DEFINITION.
+    """
+    if str(region_basis) != "soh_true":
+        raise ValueError(
+            "Unsupported uncertainty region_basis. "
+            "Currently supported: ['soh_true']"
+        )
+
     repeated_rows: list[dict] = []
 
     for seed in seeds:
@@ -39,6 +62,7 @@ def run_repeated_seed_uncertainty(
                 "cell": test_metadata_df["cell"].astype(str).to_numpy(),
                 "cycle": test_metadata_df["cycle"].to_numpy(),
                 "y_true": test_metadata_df["y_true"].to_numpy(),
+                "soh_true": test_metadata_df["soh_true"].to_numpy(),
                 "y_pred": y_pred,
             }
         )
@@ -48,7 +72,7 @@ def run_repeated_seed_uncertainty(
 
     grouped = (
         repeated_predictions_df.groupby(
-            ["cell", "cycle", "y_true"], as_index=False
+            ["cell", "cycle", "y_true", "soh_true"], as_index=False
         )
         .agg(
             y_pred_mean=("y_pred", "mean"),
@@ -77,15 +101,22 @@ def run_repeated_seed_uncertainty(
         "prediction_std_q95": float(grouped["y_pred_std"].quantile(0.95)),
     }
 
-    near_threshold = float(grouped["y_true"].quantile(near_eol_quantile))
-    long_threshold = float(grouped["y_true"].quantile(long_life_quantile))
-
     region_df = grouped.copy()
-    region_df["region"] = "mid_life"
-    region_df.loc[region_df["y_true"] <= near_threshold, "region"] = "near_eol"
-    region_df.loc[region_df["y_true"] >= long_threshold, "region"] = (
-        "long_life"
-    )
+    soh_pct = region_df["soh_true"].astype(float)
+    if float(soh_pct.max()) <= 1.5:
+        soh_pct = soh_pct * 100.0
+    region_df["soh_pct"] = soh_pct
+    early_life = SOH_REGION_DEFINITION["stages"]["Early-Life"]
+    mid_life = SOH_REGION_DEFINITION["stages"]["Mid-Life"]
+    region_df["region"] = "Aged"
+    region_df.loc[
+        region_df["soh_pct"] >= float(early_life["soh_min"]), "region"
+    ] = "Early-Life"
+    region_df.loc[
+        (region_df["soh_pct"] >= float(mid_life["soh_min"]))
+        & (region_df["soh_pct"] < float(mid_life["soh_max"])),
+        "region",
+    ] = "Mid-Life"
 
     region_rows: list[dict] = []
     for region_name, region_data in region_df.groupby("region"):
@@ -97,6 +128,8 @@ def run_repeated_seed_uncertainty(
             {
                 "region": region_name,
                 "n_samples": int(region_data.shape[0]),
+                "soh_min_pct": float(region_data["soh_pct"].min()),
+                "soh_max_pct": float(region_data["soh_pct"].max()),
                 "rmse_mean_prediction": float(metrics["rmse"]),
                 "mae_mean_prediction": float(metrics["mae"]),
                 "r2_mean_prediction": float(metrics["r2"]),
@@ -106,14 +139,24 @@ def run_repeated_seed_uncertainty(
                 ),
             }
         )
-    uncertainty_by_region_df = (
-        pd.DataFrame(region_rows).sort_values("region").reset_index(drop=True)
+    uncertainty_by_region_df = pd.DataFrame(region_rows)
+    stage_order = list(SOH_REGION_DEFINITION["order"])
+    uncertainty_by_region_df["region"] = pd.Categorical(
+        uncertainty_by_region_df["region"],
+        categories=stage_order,
+        ordered=True,
     )
+    uncertainty_by_region_df = uncertainty_by_region_df.sort_values(
+        "region"
+    ).reset_index(drop=True)
+    uncertainty_by_region_df["region"] = uncertainty_by_region_df[
+        "region"
+    ].astype(str)
 
-    uncertainty_summary["near_eol_threshold"] = near_threshold
-    uncertainty_summary["long_life_threshold"] = long_threshold
-    uncertainty_summary["near_eol_quantile"] = near_eol_quantile
-    uncertainty_summary["long_life_quantile"] = long_life_quantile
+    uncertainty_summary["region_basis"] = str(region_basis)
+    uncertainty_summary["region_definition"] = deepcopy(
+        SOH_REGION_DEFINITION
+    )
 
     return (
         repeated_predictions_df,

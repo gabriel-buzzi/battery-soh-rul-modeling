@@ -87,12 +87,18 @@ def _extract_cycle_features(
     )
 
     soh = float(cycle_sorted["SOH"].iloc[0])
+    charge_policy = (
+        str(cycle_sorted["charge_policy"].iloc[0])
+        if "charge_policy" in cycle_sorted.columns
+        else "unknown"
+    )
     throughput_ah_cycle = _cycle_throughput_ah(cycle_sorted)
 
     return {
         "cell": cell_id,
         "cycle": int(cycle_id),
         "SOH": soh,
+        "charge_policy": charge_policy,
         "throughput_ah_cycle": throughput_ah_cycle,
         **full_metrics,
         **charge_metrics,
