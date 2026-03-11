@@ -1,4 +1,4 @@
-"""Run full-cycle MVP experiment pipeline."""
+"""Run experiment tracks for baseline, feature-analysis, and robustness studies."""
 
 from __future__ import annotations
 
@@ -1144,7 +1144,9 @@ def run_experiment(cfg: DictConfig) -> None:
         test_df.shape[0],
     )
 
-    if str(cfg.track) == "full_cycle_feature_analysis":
+    track_name = str(cfg.track)
+
+    if track_name == "full_cycle_feature_analysis":
         full_columns = FULL_CYCLE_FEATURE_COLUMNS.copy()
         full_no_temp_columns = [
             col
@@ -1161,7 +1163,7 @@ def run_experiment(cfg: DictConfig) -> None:
         )
         return
 
-    if str(cfg.track) == "charge_only_feature_analysis":
+    if track_name == "charge_only_feature_analysis":
         charge_columns = CHARGE_FEATURE_COLUMNS.copy()
         charge_temp_columns = [
             f"charge_{col}" for col in TEMPERATURE_FEATURE_COLUMNS
@@ -1179,7 +1181,7 @@ def run_experiment(cfg: DictConfig) -> None:
         )
         return
 
-    if str(cfg.track) == "uncertainty":
+    if track_name == "uncertainty":
         _run_uncertainty_track(
             cfg=cfg,
             train_df=train_df,
@@ -1190,7 +1192,7 @@ def run_experiment(cfg: DictConfig) -> None:
         )
         return
 
-    if str(cfg.track) == "diagnostics":
+    if track_name == "diagnostics":
         _run_diagnostics_track(
             cfg=cfg,
             train_df=train_df,
@@ -1201,7 +1203,7 @@ def run_experiment(cfg: DictConfig) -> None:
         )
         return
 
-    if str(cfg.track) == "protocol_robustness":
+    if track_name == "protocol_robustness":
         _run_protocol_robustness_track(
             cfg=cfg,
             features_df=features_df,
@@ -1211,6 +1213,18 @@ def run_experiment(cfg: DictConfig) -> None:
             feature_columns=feature_columns,
         )
         return
+
+    # `baseline_evaluation` is the canonical name for the baseline train/test
+    # track. `full_cycle` is kept as a backward-compatible alias for older
+    # commands and configs.
+    if track_name not in {"baseline_evaluation", "full_cycle"}:
+        raise ValueError(
+            "Unsupported baseline-like track="
+            f"{track_name}. Supported tracks are "
+            "['baseline_evaluation', 'full_cycle', "
+            "'full_cycle_feature_analysis', 'charge_only_feature_analysis', "
+            "'uncertainty', 'diagnostics', 'protocol_robustness']."
+        )
 
     X_train = train_df[feature_columns]
     y_train = train_df[cfg.target]

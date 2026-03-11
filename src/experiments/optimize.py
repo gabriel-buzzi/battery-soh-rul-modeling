@@ -17,7 +17,7 @@ OBJECTIVE_FORMULA = (
     "objective = RMSE_val + abs(RMSE_train - RMSE_val) / RMSE_val"
 )
 SEARCH_SPACE_SIGNATURE = {
-    "n_estimators": {"type": "int", "low": 50, "high": 150},
+    "n_estimators": {"type": "int", "low": 50, "high": 500},
     "criterion": {"type": "fixed", "value": "squared_error"},
     "max_depth": {"type": "int", "low": 3, "high": 20},
     "min_samples_split": {"type": "int", "low": 2, "high": 20},
