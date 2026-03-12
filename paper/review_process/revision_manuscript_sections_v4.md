@@ -105,12 +105,10 @@ The values in Table M2 are not monotonic with charge C-rate: the higher-rate fam
 
 ## Baseline Full-Cycle Performance
 
-The results below draw on two artifact families generated at different stages of the project. The original `full_cycle` track contains the baseline held-out evaluations for the 16-feature full-cycle SoH and RUL models. The later `baseline_evaluation` track contains held-out follow-up runs for charge-only, compact-subset, and no-temperature variants, and also reproduces some full-cycle-style evaluations under the newer track name. In the text below, these artifact families are treated as part of one experimental history, but the distinction is made explicit whenever cross-validation artifacts and later held-out follow-up runs are discussed together.
-
-Table 1 summarizes the four baseline configurations used as anchors for the later analyses. The full-cycle baseline test metrics come from the original `full_cycle` artifacts, whereas the charge-only baseline test metrics come from the later `baseline_evaluation` follow-up runs. Taken together, these held-out results confirm that the feature-based `ExtraTrees` approach remains viable for cross-cell prognosis, although the two targets are not equally difficult. SoH estimation remains comparatively accurate in both settings, with test RMSE of 1.07 percentage points for the full-cycle baseline and 1.15 for the charge-only baseline, both with strong test-set $R^2$. By contrast, cycle-based RUL prediction is substantially harder, with baseline test RMSE of 145.66 cycles for the full-cycle model and 146.47 cycles for the charge-only model, together with a notably larger train-validation gap already visible in cross-validation. This asymmetry indicates that the single-cycle statistics capture present health more directly than long-horizon lifetime. For RUL, the two baseline held-out results are close enough that they should be interpreted as broadly comparable rather than as evidence of a large, stable advantage for one feature view.
+Table 1 summarizes the four baseline configurations used as anchors for the later analyses. All values are taken from the refactored `final_eval` campaign runs, with full-cycle and charge-only baselines treated as parallel branches under the same artifact schema. Taken together, these held-out results confirm that the feature-based `ExtraTrees` approach remains viable for cross-cell prognosis, although the two targets are not equally difficult. SoH estimation remains comparatively accurate in both settings, with test RMSE of 1.07 percentage points for the full-cycle baseline and 1.15 for the charge-only baseline, both with strong test-set $R^2$. By contrast, cycle-based RUL prediction is substantially harder, with baseline test RMSE of 145.66 cycles for the full-cycle model and 146.47 cycles for the charge-only model, together with a notably larger train-validation gap already visible in cross-validation. This asymmetry indicates that the single-cycle statistics capture present health more directly than long-horizon lifetime. For RUL, the two baseline held-out results are close enough that they should be interpreted as broadly comparable rather than as evidence of a large, stable advantage for one feature view.
 
 **Table 1. Baseline optimization and evaluation summary. Columns report the prediction target, the baseline feature set used in that run, the number of features, the validation RMSE from grouped cross-validation, the mean train-validation relative gap, and the held-out test RMSE, MAE, and R2.**  
-Source artifacts: `full_cycle/*/run_summary.json`, `charge_only_feature_analysis/*/topk_sweep_metrics.csv`, `baseline_evaluation/*/table_main_metrics.csv`
+Source artifacts: `final_eval/*/metrics.json`, `final_eval/*/summary.json`, `final_eval/*/table.main_metrics.csv`
 
 | Target | Baseline feature set | No. of features | CV validation RMSE | CV relative gap | Test RMSE | Test MAE | Test R2 |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -122,7 +120,7 @@ Source artifacts: `full_cycle/*/run_summary.json`, `charge_only_feature_analysis
 The hyperparameter sets selected for these four baseline configurations are shown in Table 1b. The results reveal that the full-cycle RUL baseline favored deeper trees and smaller leaves than the SoH baseline, consistent with the higher structural complexity of RUL estimation. The charge-only baselines selected shallower or more regularized trees than the corresponding full-cycle baselines, which is consistent with the reduced information content of the charge-only feature view.
 
 **Table 1b. Selected hyperparameters for the four baseline models. Columns report the target, the baseline feature view, and the optimized values chosen for the `ExtraTrees` hyperparameters.**  
-Source artifacts: `full_cycle/*/best_params.json`, `charge_only_feature_analysis/*/best_params.json`
+Source artifacts: `final_eval/*/best_params.json`
 
 | Target | Baseline feature set | n_estimators | max_depth | min_samples_split | min_samples_leaf | max_features |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
@@ -136,7 +134,7 @@ Source artifacts: `full_cycle/*/best_params.json`, `charge_only_feature_analysis
 The full-cycle ranking results show a clear hierarchy of prognostic relevance. For SoH, the dominant features are voltage entropy, voltage standard deviation, current interquartile range, and voltage interquartile range. Interpreted through Table M1, these features emphasize how broadly the voltage trajectory is distributed and how strongly the current profile separates the dominant operating regimes within the cycle. For RUL, the ranking is led by voltage interquartile range and current standard deviation, followed by voltage entropy and voltage standard deviation, again indicating that the most useful information is carried by the dispersion and occupancy structure of the voltage curve rather than by simple mean levels alone. In both tasks, voltage-distribution descriptors dominate the upper portion of the ranking, while temperature features are absent from the most influential positions. This pattern indicates that the main single-cycle prognostic signal is encoded in the shape and dispersion of the voltage trajectory, with current statistics providing additional but secondary information.
 
 **Table 2a. Full-cycle SoH feature ranking summary. Columns report the feature rank, the feature name, the mean validation-RMSE increase produced by permuting that feature, and the standard deviation of that increase across seeds and folds.**  
-Source artifacts: `full_cycle_feature_analysis/*/feature_ranking_permutation.csv`
+Source artifacts: `full_cycle_feature_analysis/*/ranking.permutation.csv`
 | Rank | Feature | Mean RMSE increase | Stability std |
 | ---: | --- | ---: | ---: |
 | 1 | `V_entropy` | 1.8799 | 0.1338 |
@@ -157,7 +155,7 @@ Source artifacts: `full_cycle_feature_analysis/*/feature_ranking_permutation.csv
 | 16 | `T_std` | -0.0026 | 0.0115 |
 
 **Table 2b. Full-cycle RUL feature ranking summary. Columns report the feature rank, the feature name, the mean validation-RMSE increase produced by permuting that feature, and the standard deviation of that increase across seeds and folds.**  
-Source artifacts: `full_cycle_feature_analysis/*/feature_ranking_permutation.csv`
+Source artifacts: `full_cycle_feature_analysis/*/ranking.permutation.csv`
 
 | Rank | Feature | Mean RMSE increase | Stability std |
 | ---: | --- | ---: | ---: |
@@ -183,7 +181,7 @@ The top-$k$ sweep clarifies how much redundancy exists in the 16-feature represe
 The intrinsic model importances saved in the artifacts are broadly consistent with the permutation ranking and therefore support the same interpretation without changing the main conclusions. For SoH, intrinsic importance also ranks `V_entropy`, `V_median`, `V_std`, and `V_iqr` among the strongest variables. For RUL, it again elevates `V_iqr`, `V_entropy`, `V_std`, and `I_std`. Because permutation importance is more directly tied to predictive degradation when information is destroyed, it remains the main ranking criterion in the text, while intrinsic importance serves as corroborating evidence rather than as a second competing ranking.
 
 **Table 3a. Full-cycle SoH top-k sweep. Columns report the number of retained features, the validation RMSE, the mean train-validation relative gap, the absolute RMSE change relative to the 16-feature baseline, and the corresponding percentage change.**  
-Source artifacts: `full_cycle_feature_analysis/*/topk_sweep_metrics.csv`
+Source artifacts: `full_cycle_feature_analysis/*/sweep.topk.csv`
 
 | k | Validation RMSE | Relative gap | Absolute delta from 16-feature baseline | Percentage delta from 16-feature baseline |
 | ---: | ---: | ---: | ---: | ---: |
@@ -196,7 +194,7 @@ Source artifacts: `full_cycle_feature_analysis/*/topk_sweep_metrics.csv`
 | 2 | 2.2847 | 0.0988 | 1.1414 | 99.84% |
 
 **Table 3b. Full-cycle RUL top-k sweep. Columns report the number of retained features, the validation RMSE, the mean train-validation relative gap, the absolute RMSE change relative to the 16-feature baseline, and the corresponding percentage change.**  
-Source artifacts: `full_cycle_feature_analysis/*/topk_sweep_metrics.csv`
+Source artifacts: `full_cycle_feature_analysis/*/sweep.topk.csv`
 
 | k | Validation RMSE | Relative gap | Absolute delta from 16-feature baseline | Percentage delta from 16-feature baseline |
 | ---: | ---: | ---: | ---: | ---: |
@@ -212,14 +210,14 @@ Source artifacts: `full_cycle_feature_analysis/*/topk_sweep_metrics.csv`
 
 The heuristic compact-subset selection chose $k=6$ for both targets, even though the absolute minimum validation RMSE appears at larger $k$. This decision is methodologically defensible because the purpose of the sweep was not to identify the single numerically best subset, but to identify the smallest subset that preserves nearly all of the predictive value of the larger representation. Under that criterion, the selected SoH subset was `V_entropy`, `V_std`, `I_iqr`, `V_iqr`, `I_kurtosis`, and `V_median`, while the selected RUL subset was `V_iqr`, `I_std`, `V_entropy`, `V_std`, `I_mean`, and `I_median`.
 
-Later held-out follow-up runs were then used to check whether these CV-selected compact subsets remain credible on unseen cells. For SoH, the six-feature full-cycle subset remains reasonably competitive, with test RMSE 1.1662 and test $R^2 = 0.9292$, but it does not match the 16-feature baseline. For RUL, the same compactness move is more costly on the held-out cells: test RMSE rises from 145.66 to 155.46 cycles and test $R^2$ falls from 0.8660 to 0.8473. These follow-up results therefore support the compact full-cycle models primarily as deployable approximations, especially for SoH, rather than as stronger alternatives to the full 16-feature baselines.
+Later held-out follow-up runs were then used to check whether these CV-selected compact subsets remain credible on unseen cells. For SoH, the six-feature full-cycle subset remains reasonably competitive, with test RMSE 1.2474 and test $R^2 = 0.9191$, but it does not match the 16-feature baseline. For RUL, the same compactness move is more costly on the held-out cells: test RMSE rises from 145.66 to 156.63 cycles and test $R^2$ falls from 0.8660 to 0.8450. These follow-up results therefore support the compact full-cycle models primarily as deployable approximations, especially for SoH, rather than as stronger alternatives to the full 16-feature baselines.
 
 The leave-one-feature-out results for these selected subsets are available in the saved artifacts and help quantify residual redundancy after compact-subset selection. For SoH, the largest degradation occurs when `I_kurtosis` is removed, increasing validation RMSE from 1.2422 to 1.4891, while removing `V_entropy`, `V_iqr`, or `V_std` produces smaller but still measurable losses. For RUL, removing `I_median`, `V_iqr`, or `I_mean` leads to the largest deterioration, increasing validation RMSE from 112.2295 to 128.4017, 125.1802, and 121.3636 cycles, respectively. These results indicate that the selected subsets are compact but not arbitrary: several retained variables still contribute non-negligible complementary information.
 
 The no-temperature ablation further strengthens the conclusion that temperature contributes weakly and inconsistently in this dataset. In the cross-validation ablation artifacts, removing all temperature features improved validation RMSE for both full-cycle SoH and full-cycle RUL. This supports the view that, within the feature-analysis pipeline, temperature-derived statistics add limited marginal value.
 
 **Table 4. Full-cycle no-temperature ablation under grouped cross-validation. Columns compare the full 16-feature baseline and the corresponding no-temperature variant in terms of number of features, validation RMSE, mean train-validation relative gap, and optimization objective score.**  
-Source artifacts: `full_cycle/*/run_summary.json`, `full_cycle_feature_analysis/*/no_temp_metrics.json`
+Source artifacts: `final_eval/*/metrics.json`, `full_cycle_feature_analysis/*/ablation.no_temp.json`
 
 | Target | Configuration | n_features | Val RMSE | Relative gap | Objective score |
 | --- | --- | ---: | ---: | ---: | ---: |
@@ -228,14 +226,14 @@ Source artifacts: `full_cycle/*/run_summary.json`, `full_cycle_feature_analysis/
 | RUL | Full-cycle baseline | 16 | 112.0319 | 0.7339 | 112.7658 |
 | RUL | No-temperature | 11 | 101.9910 | 0.5853 | 102.5763 |
 
-Separately optimized held-out follow-up runs provide a more asymmetric picture. For SoH, the no-temperature full-cycle follow-up model improves over the original 16-feature baseline, reducing test RMSE from 1.0660 to 1.0251 and increasing test $R^2$ from 0.9409 to 0.9453. For RUL, however, the held-out behavior is mixed: the no-temperature follow-up model achieves better cross-validation than the original baseline but worsens on the held-out test set, with test RMSE increasing from 145.66 to 153.14 cycles and test $R^2$ falling from 0.8660 to 0.8519. The original dataset documentation reports problems with thermocouple attachment and stability, which likely contributes noise to temperature-derived statistics. Taken together, the current evidence suggests limited and unstable marginal utility for temperature rather than a uniform harmful effect.
+Separately optimized held-out follow-up runs provide a more asymmetric picture. For SoH, the no-temperature full-cycle follow-up model improves over the original 16-feature baseline, reducing test RMSE from 1.0660 to 1.0243 and increasing test $R^2$ from 0.9409 to 0.9454. For RUL, however, the held-out behavior is mixed: the no-temperature follow-up model achieves better cross-validation than the original baseline but worsens on the held-out test set, with test RMSE increasing from 145.66 to 153.31 cycles and test $R^2$ falling from 0.8660 to 0.8515. The original dataset documentation reports problems with thermocouple attachment and stability, which likely contributes noise to temperature-derived statistics. Taken together, the current evidence suggests limited and unstable marginal utility for temperature rather than a uniform harmful effect.
 
 ## Charge-Only Prognostics
 
 The charge-only results preserve the same qualitative feature hierarchy but with a more compact dominant core. Voltage median, current median, voltage entropy, and current or voltage spread statistics occupy the top of the ranking for both targets. For SoH, the six-feature charge-only subset includes `charge_V_median`, `charge_I_median`, `charge_V_entropy`, `charge_V_std`, `charge_V_iqr`, and `charge_I_std`. For RUL, the four-feature subset `charge_V_median`, `charge_I_median`, `charge_V_entropy`, and `charge_I_std` is already sufficient under the compactness heuristic. This compression relative to the full-cycle case indicates that the charging segment concentrates much of the most actionable single-cycle signal, albeit not all of it.
 
 **Table 5a. Charge-only SoH feature ranking summary. Columns report the feature rank, the feature name, the mean validation-RMSE increase produced by permuting that feature, and the standard deviation of that increase across seeds and folds.**  
-Source artifacts: `charge_only_feature_analysis/*/feature_ranking_permutation.csv`
+Source artifacts: `charge_only_feature_analysis/*/ranking.permutation.csv`
 
 | Rank | Feature | Mean RMSE increase | Stability std |
 | ---: | --- | ---: | ---: |
@@ -257,7 +255,7 @@ Source artifacts: `charge_only_feature_analysis/*/feature_ranking_permutation.cs
 | 16 | `charge_T_std` | 0.0054 | 0.0058 |
 
 **Table 5b. Charge-only RUL feature ranking summary. Columns report the feature rank, the feature name, the mean validation-RMSE increase produced by permuting that feature, and the standard deviation of that increase across seeds and folds.**  
-Source artifacts: `charge_only_feature_analysis/*/feature_ranking_permutation.csv`
+Source artifacts: `charge_only_feature_analysis/*/ranking.permutation.csv`
 
 | Rank | Feature | Mean RMSE increase | Stability std |
 | ---: | --- | ---: | ---: |
@@ -282,12 +280,12 @@ Charge-only validation performance is consistently worse than the corresponding 
 
 The charge-only top-$k$ sweep reinforces the compactness argument. For SoH, larger subsets provide slightly better validation performance, but the six-feature subset remains close enough to the baseline to justify its selection. For RUL, the compact 4-feature subset performs worse than the best 8- or 10-feature subsets, yet still retains the dominant information carriers and therefore offers a parsimonious approximation when feature count is operationally constrained. The selected compact subsets are therefore `charge_V_median`, `charge_I_median`, `charge_V_entropy`, `charge_V_std`, `charge_V_iqr`, and `charge_I_std` for SoH, and `charge_V_median`, `charge_I_median`, `charge_V_entropy`, and `charge_I_std` for RUL. As in the full-cycle case, these subset choices are determined by grouped cross-validation and the compactness heuristic, not by held-out test performance.
 
-Later held-out follow-up runs sharpen this comparison. For charge-only SoH, the six-feature compact model slightly outperforms the 16-feature charge-only baseline on unseen cells, reducing test RMSE from 1.1532 to 1.0780 and raising test $R^2$ from 0.9308 to 0.9395. This suggests that, in the charge-only SoH setting, pruning weak or noisy variables is beneficial not only in validation but also in held-out evaluation. For charge-only RUL, the four-feature compact model remains workable but loses accuracy relative to the 16-feature charge-only baseline, with test RMSE increasing from 146.47 to 150.60 cycles and test $R^2$ dropping from 0.8645 to 0.8567. Even so, this charge-only compact RUL follow-up remains slightly better than the corresponding full-cycle compact follow-up run, which indicates that the held-out evidence for RUL is mixed and should be interpreted as a question of stability rather than as a universal full-cycle advantage.
+Later held-out follow-up runs sharpen this comparison. For charge-only SoH, the six-feature compact model does not improve over the 16-feature charge-only baseline on unseen cells: test RMSE rises from 1.1532 to 1.2999 and test $R^2$ falls from 0.9308 to 0.9121. This indicates that, in the charge-only SoH setting, the cross-validation-selected compact subset is better interpreted as a deployability trade-off than as a stronger replacement for the full 16-feature baseline. For charge-only RUL, the four-feature compact model remains workable but loses accuracy relative to the 16-feature charge-only baseline, with test RMSE increasing from 146.47 to 151.44 cycles and test $R^2$ dropping from 0.8645 to 0.8551. The held-out evidence for both targets therefore indicates that compact charge-only models should be framed as parsimonious approximations rather than as uniformly stronger alternatives.
 
 The intrinsic-importance artifacts for the charge-only runs are also consistent with the permutation-based ranking. For SoH, intrinsic importance places `charge_V_median`, `charge_V_entropy`, and `charge_I_median` at the top, followed by `charge_V_std` and `charge_V_iqr`. For RUL, it again prioritizes `charge_V_median`, `charge_V_entropy`, `charge_I_std`, and `charge_I_median`. The ordering is not identical to the permutation ranking, but both views support the same higher-level conclusion: the dominant signal in the charge-only setting is concentrated in voltage occupancy and spread descriptors, with current statistics adding complementary information.
 
 **Table 6a. Charge-only SoH top-k sweep. Columns report the number of retained features, the validation RMSE, the mean train-validation relative gap, the absolute RMSE change relative to the 16-feature charge-only baseline, and the corresponding percentage change.**  
-Source artifacts: `charge_only_feature_analysis/*/topk_sweep_metrics.csv`
+Source artifacts: `charge_only_feature_analysis/*/sweep.topk.csv`
 
 | k | Validation RMSE | Relative gap | Absolute delta from 16-feature charge-only baseline | Percentage delta from 16-feature charge-only baseline |
 | ---: | ---: | ---: | ---: | ---: |
@@ -300,7 +298,7 @@ Source artifacts: `charge_only_feature_analysis/*/topk_sweep_metrics.csv`
 | 2 | 2.4398 | 0.0692 | 1.2220 | 100.34% |
 
 **Table 6b. Charge-only RUL top-k sweep. Columns report the number of retained features, the validation RMSE, the mean train-validation relative gap, the absolute RMSE change relative to the 16-feature charge-only baseline, and the corresponding percentage change.**  
-Source artifacts: `charge_only_feature_analysis/*/topk_sweep_metrics.csv`
+Source artifacts: `charge_only_feature_analysis/*/sweep.topk.csv`
 
 | k | Validation RMSE | Relative gap | Absolute delta from 16-feature charge-only baseline | Percentage delta from 16-feature charge-only baseline |
 | ---: | ---: | ---: | ---: | ---: |
@@ -314,12 +312,12 @@ Source artifacts: `charge_only_feature_analysis/*/topk_sweep_metrics.csv`
 
 [Figure Placeholder: Charge-only vs full-cycle compactness comparison. Generate a two-panel line plot, one panel for SoH and one for RUL, with k on the x-axis and validation RMSE on the y-axis. Overlay the full-cycle and charge-only curves, highlight the selected compact subsets, and annotate the gap between the two feature views at k = 16 and at the selected k.]
 
-The no-temperature charge-only results again indicate that thermal features are not consistently beneficial. In the charge-only cross-validation ablations, the effect is nearly neutral for SoH and beneficial for RUL. The later held-out follow-up runs reinforce that pattern rather than weakening it. For SoH, replacing the 16-feature charge-only baseline with the 11-feature no-temperature variant improves test RMSE from 1.1532 to 1.0414 and increases test $R^2$ from 0.9308 to 0.9436. For RUL, removing charge-only temperature features reduces test RMSE from 146.47 to 128.80 cycles and improves test $R^2$ from 0.8645 to 0.8952. Taken together with the full-cycle ablations, this pattern again points to limited and unstable marginal utility for temperature, but not to a single uniform effect across all settings.
+The no-temperature charge-only results again indicate that thermal features are not consistently beneficial. In the charge-only cross-validation ablations, the effect is nearly neutral for SoH and beneficial for RUL. The later held-out follow-up runs only partly reinforce that pattern. For SoH, replacing the 16-feature charge-only baseline with the 11-feature no-temperature variant slightly worsens held-out performance, with test RMSE increasing from 1.1532 to 1.1627 and test $R^2$ decreasing from 0.9308 to 0.9297. For RUL, removing charge-only temperature features reduces test RMSE from 146.47 to 128.52 cycles and improves test $R^2$ from 0.8645 to 0.8956. Taken together with the full-cycle ablations, this pattern again points to limited and unstable marginal utility for temperature, but not to a single uniform effect across all settings.
 
 The leave-one-feature-out results for the selected charge-only subsets further clarify which variables remain indispensable after compactness filtering. For SoH, removing `charge_V_std`, `charge_I_median`, or `charge_V_median` increases validation RMSE from 1.3203 to 1.7332, 1.7377, and 1.4504, respectively, indicating that the compact subset is still carrying several non-redundant voltage- and current-level descriptors. For RUL, the strongest deterioration is produced by dropping `charge_I_median`, `charge_I_std`, or `charge_V_median`, which raises validation RMSE from 145.8439 to 193.0181, 186.9622, and 178.3671 cycles, respectively. As in the full-cycle case, these results show that the selected compact subsets are not merely small; they are internally structured around a few features with clearly differentiated predictive roles.
 
 **Table 7. Charge-only no-temperature ablation under grouped cross-validation. Columns compare the full 16-feature charge-only baseline and the corresponding no-temperature variant in terms of number of features, validation RMSE, mean train-validation relative gap, and optimization objective score.**  
-Source artifacts: `charge_only_feature_analysis/*/topk_sweep_metrics.csv`, `charge_only_feature_analysis/*/no_temp_metrics.json`
+Source artifacts: `final_eval/*/metrics.json`, `charge_only_feature_analysis/*/ablation.no_temp.json`
 
 | Target | Configuration | No. of features | Validation RMSE | Relative gap | Objective score |
 | --- | --- | ---: | ---: | ---: | ---: |
@@ -328,7 +326,7 @@ Source artifacts: `charge_only_feature_analysis/*/topk_sweep_metrics.csv`, `char
 | RUL | All charge-only features | 16 | 136.0298 | 0.7673 | 136.7971 |
 | RUL | Charge-only without temperature features | 11 | 130.5267 | 0.6692 | 131.1959 |
 
-In later held-out follow-up runs, the charge-only no-temperature models improve on the corresponding 16-feature charge-only baselines for both targets. For SoH, test RMSE decreases from 1.1532 to 1.0414 and test $R^2$ rises from 0.9308 to 0.9436. For RUL, test RMSE decreases from 146.47 to 128.80 cycles and test $R^2$ rises from 0.8645 to 0.8952. These follow-up results strengthen the deployment-oriented argument that charge-only prognosis does not require temperature-derived features in the present representation.
+In later held-out follow-up runs, the charge-only no-temperature models diverge by target. For SoH, test RMSE increases slightly from 1.1532 to 1.1627 and test $R^2$ decreases marginally from 0.9308 to 0.9297. For RUL, test RMSE decreases from 146.47 to 128.52 cycles and test $R^2$ rises from 0.8645 to 0.8956. These follow-up results strengthen the deployment-oriented argument that charge-only prognosis does not require temperature-derived features for RUL, while indicating a near-neutral effect for SoH.
 
 ## Uncertainty Across Life Regions
 
@@ -337,7 +335,7 @@ The repeated-seed uncertainty analysis shows that prediction spread is generally
 For RUL, the pattern differs. The mean prediction standard deviation is largest in early life (6.11 cycles) and smallest in the aged region (1.26 cycles). Absolute predictive error follows the same trend, with RMSE falling from 162.70 cycles in early life to 34.31 cycles near end-of-life. This does not imply that late-life RUL is intrinsically easier in a relative sense; rather, the remaining lifetime itself becomes smaller, which shrinks the absolute error scale. Because the present artifact set reports only absolute errors, and because relative RUL errors become unstable near end-of-life, the important point here is that prediction spread and predictive error both vary systematically with degradation stage, but not identically across targets. A further factor that should be considered is the representativity of each SoH region in the training data: if the aged region is underrepresented, part of the observed degradation may be due to weaker statistical support rather than to an intrinsic impossibility of the task.
 
 **Table 8. Uncertainty by life region. Columns report the target, the SoH-defined region, the RMSE and MAE of the mean repeated prediction, the corresponding R2, the mean standard deviation of the repeated predictions, and the 90th percentile of that prediction standard deviation.**  
-Source artifacts: `uncertainty/*/uncertainty_by_region.csv`
+Source artifacts: `uncertainty/*/uncertainty.by_region.csv`
 
 | Target | Region | RMSE of mean prediction | MAE | R² | Mean prediction std | q90 prediction std |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
@@ -357,7 +355,7 @@ Per-cell diagnostics show that prediction error is not evenly distributed across
 Several cells recur across both SoH and RUL diagnostics, including `b3c7`, `b1c3`, `b2c1`, `b1c0`, and `b3c39`. Their repeated appearance suggests that the most difficult cases are not target-specific accidents but persistent outliers in the held-out population. The dominant error region also differs by target. For SoH, difficult cells are frequently dominated by late-life errors, consistent with the worsening aged-region behavior seen in the uncertainty analysis. For RUL, difficult cells are more often dominated by early- or mid-life errors, consistent with the larger absolute scale of remaining life in those regions. Beyond the metrics shown in Table 9, useful follow-up analyses for explaining these difficult cells include comparing their total cycle life against the training distribution, examining whether they belong to the most aggressive protocol families, inspecting whether their voltage and current feature trajectories depart from the dominant population trend, and checking whether their errors are associated with unusually large positive or negative bias.
 
 **Table 9a. Difficult-cell diagnostics for SoH. Columns report the difficult-cell identifier, its RMSE, its MAE, and the life region in which its errors are most concentrated.**  
-Source artifacts: `diagnostics/*/error_cells_summary.csv`, `diagnostics_summary.json`
+Source artifacts: `diagnostics/*/diagnostics.cells.csv`, `diagnostics/*/diagnostics.summary.json`
 
 | Cell | RMSE | MAE | Dominant error region |
 | --- | ---: | ---: | --- |
@@ -373,7 +371,7 @@ Source artifacts: `diagnostics/*/error_cells_summary.csv`, `diagnostics_summary.
 | `b2c43` | 1.0605 | 0.8556 | early_life |
 
 **Table 9b. Difficult-cell diagnostics for RUL. Columns report the difficult-cell identifier, its RMSE, its MAE, and the life region in which its errors are most concentrated.**  
-Source artifacts: `diagnostics/*/error_cells_summary.csv`, `diagnostics_summary.json`
+Source artifacts: `diagnostics/*/diagnostics.cells.csv`, `diagnostics/*/diagnostics.summary.json`
 
 | Cell | RMSE | MAE | Dominant error region |
 | --- | ---: | ---: | --- |
@@ -397,7 +395,7 @@ The family-holdout evaluation shows that the learned feature-target relationship
 RUL is more sensitive to protocol shift. Family-holdout RMSE ranges from 66.08 cycles for `bin_1__no_rest` to 196.95 cycles for `bin_2__no_rest`, with lower $R^2$ in the more difficult families. The strongest deterioration occurs in higher-rate families with longer and more variable cycle-life distributions. These results imply that the model's cross-cell generalization is meaningful but incomplete: robustness degrades when the held-out family differs more strongly in aggressiveness and lifetime profile from the training families.
 
 **Table 10a. Protocol-family robustness for SoH. Columns report the held-out protocol-family label, the RMSE, the MAE, and the R2 obtained when that family is excluded from training and used only for testing. Family characteristics are given in Table M2.**  
-Source artifacts: `protocol_robustness/*/protocol_family_results.csv`, `protocol_robustness_summary.json`
+Source artifacts: `protocol_robustness/*/robustness.by_family.csv`, `protocol_robustness/*/robustness.summary.json`
 
 | Held-out family | RMSE | MAE | R2 |
 | --- | ---: | ---: | ---: |
@@ -407,7 +405,7 @@ Source artifacts: `protocol_robustness/*/protocol_family_results.csv`, `protocol
 | `bin_3__no_rest` | 1.4367 | 0.8843 | 0.8840 |
 
 **Table 10b. Protocol-family robustness for RUL. Columns report the held-out protocol-family label, the RMSE, the MAE, and the R2 obtained when that family is excluded from training and used only for testing. Family characteristics are given in Table M2.**  
-Source artifacts: `protocol_robustness/*/protocol_family_results.csv`, `protocol_robustness_summary.json`
+Source artifacts: `protocol_robustness/*/robustness.by_family.csv`, `protocol_robustness/*/robustness.summary.json`
 
 | Held-out family | RMSE | MAE | R2 |
 | --- | ---: | ---: | ---: |
@@ -422,11 +420,11 @@ Source artifacts: `protocol_robustness/*/protocol_family_results.csv`, `protocol
 
 Our experiments indicate that single-cycle, statistics-based prognosis remains scientifically meaningful, but the evidence is more nuanced than a purely performance-centered reading would suggest. The baseline full-cycle results show that present health can be estimated more reliably than long-horizon remaining life. This asymmetry is expected: SoH is more directly tied to the immediate shape of the observed diagnostic signals, whereas RUL compresses the entire future degradation path into one target and is therefore more sensitive to heterogeneity across cells and protocols.
 
-The feature-analysis results provide the clearest substantive conclusion of the study. Across both full-cycle and charge-only settings, the most informative variables are primarily voltage-distribution features, especially entropy, spread, and median-related descriptors. Current-distribution features contribute additional signal, particularly for RUL, but they rarely displace the leading voltage features. Temperature features, by contrast, are weak and inconsistent. Their absence from the leading ranks, the improvement of the charge-only no-temperature follow-up runs, and the full-cycle SoH no-temperature improvement all indicate that the present prognostic representation can remain effective without relying on temperature-derived statistics as a core requirement. At the same time, the full-cycle RUL held-out follow-up does not improve after temperature removal, so the evidence is better interpreted as limited and unstable marginal utility than as evidence that temperature is uniformly harmful. This finding is especially important because it shifts the interpretation of the method away from a fully tri-modal voltage-current-temperature representation and toward a more robust voltage-current core.
+The feature-analysis results provide the clearest substantive conclusion of the study. Across both full-cycle and charge-only settings, the most informative variables are primarily voltage-distribution features, especially entropy, spread, and median-related descriptors. Current-distribution features contribute additional signal, particularly for RUL, but they rarely displace the leading voltage features. Temperature features, by contrast, are weak and inconsistent. Their absence from the leading ranks, the full-cycle SoH no-temperature improvement, and the strong charge-only RUL no-temperature improvement all indicate that the present prognostic representation can often remain effective without relying on temperature-derived statistics as a core requirement. At the same time, the full-cycle RUL held-out follow-up does not improve after temperature removal and the charge-only SoH no-temperature follow-up is nearly neutral to slightly worse, so the evidence is better interpreted as limited and unstable marginal utility than as evidence that temperature is uniformly harmful. This finding is especially important because it shifts the interpretation of the method away from a fully tri-modal voltage-current-temperature representation and toward a more robust voltage-current core.
 
 The compactness analysis also clarifies the methodological emphasis of the work. The best-performing subsets are not necessarily the smallest ones, and the strongest validation RMSE often occurs at 8 to 12 features rather than at the selected compact subset. However, choosing the compact subset through a 10% performance tolerance is still scientifically justified. The aim of this criterion is not to claim that six features are universally optimal, but to demonstrate that most of the predictive value can be retained with a much smaller representation. In this sense, the selected compact subsets are evidence of redundancy in the larger feature space and of a realistic complexity-performance trade-off for deployable diagnostics.
 
-The charge-only results further support this interpretation. Restricting the analysis to charging segments degrades predictive accuracy in the original cross-validation analyses, especially for RUL, but does not destroy the prognostic signal. The held-out follow-up runs are particularly informative here: charge-only SoH remains close to the full-cycle baseline, and the compact six-feature and no-temperature eleven-feature charge-only SoH variants even improve over the 16-feature charge-only baseline on unseen cells. For RUL, however, the held-out evidence is mixed rather than uniformly unfavorable to charge-only. The baseline held-out results are nearly tied, the compact charge-only follow-up is slightly better than the compact full-cycle follow-up, and the charge-only no-temperature follow-up is clearly better than the full-cycle no-temperature follow-up. This suggests that partial-cycle prognosis is feasible when operational constraints make discharge data unavailable, but also that the present RUL conclusions should be framed in terms of stability and split sensitivity rather than a universal full-cycle advantage.
+The charge-only results further support this interpretation. Restricting the analysis to charging segments degrades predictive accuracy in the original cross-validation analyses, especially for RUL, but does not destroy the prognostic signal. The held-out follow-up runs are particularly informative here: charge-only SoH remains close to the full-cycle baseline, but neither the compact six-feature nor the no-temperature eleven-feature charge-only SoH variant improves over the 16-feature charge-only baseline on unseen cells. For RUL, however, the held-out evidence is mixed rather than uniformly unfavorable to charge-only. The baseline held-out results are nearly tied, the compact charge-only follow-up remains slightly better than the corresponding compact full-cycle follow-up, and the charge-only no-temperature follow-up is clearly better than the full-cycle no-temperature follow-up. This suggests that partial-cycle prognosis is feasible when operational constraints make discharge data unavailable, but also that the present RUL conclusions should be framed in terms of stability and split sensitivity rather than a universal full-cycle advantage.
 
 The uncertainty and diagnostics tracks reveal that predictive reliability is strongly stage- and cell-dependent. For SoH, both prediction spread and prediction error worsen as cells approach the aged region, indicating that late-stage degradation is not fully captured by the present single-cycle statistics. For RUL, the largest absolute errors occur early in life, when small differences in degradation trajectory correspond to large differences in remaining cycles. This difference between targets emphasizes that predictive spread and predictive accuracy should not be conflated: a model may be stable across repeated retraining and still be systematically inaccurate in a region where the target itself is difficult to infer from present-state information.
 
@@ -439,5 +437,3 @@ These findings define a more constrained but more defensible scope for the metho
 From an industry perspective, the observed SoH performance is the more immediately actionable result. An error near one percentage point can be useful for diagnostic screening, warranty triage, or maintenance prioritization when SoH is estimated during scheduled service events rather than continuously. The RUL results are better interpreted as coarse risk indicators than as cycle-accurate forecasts: an error on the order of 100 to 150 cycles is too large for precise replacement scheduling, but it can still separate clearly healthy assets from assets that are approaching accelerated degradation. In that sense, the present methodology is more naturally aligned with periodic decision support and fleet-level stratification than with fine-grained operational forecasting.
 
 Within that scope, however, the main contribution is still significant. The experiments show that a carefully ranked and pruned set of simple cycle statistics can retain substantial prognostic value, that the dominant information is largely carried by voltage-current structure rather than temperature, and that useful charge-only variants are possible even though their advantage relative to full-cycle depends on the target and on the evaluation setting. These conclusions are more valuable than a simple leaderboard result because they clarify what aspects of the signal matter, which parts of the cycle are most informative, and where the present methodology fails.
-
-Although not emphasized in the main narrative, the throughput-based RUL supplementary runs follow the same qualitative patterns as cycle-based RUL: voltage and current features dominate, no-temperature variants remain competitive, and protocol-family robustness is uneven. This consistency suggests that the main conclusions are tied to the feature representation itself rather than to one particular lifetime scale.
