@@ -39,7 +39,50 @@ CHARGE_FEATURE_COLUMNS = [
 
 BASE_REQUIRED_COLUMNS = ["cell", "cycle", "SOH", "RUL"]
 
-SUPPORTED_TARGETS = {"SOH", "RUL", "RUL_THROUGHPUT"}
+SUPPORTED_TARGETS = {"SOH", "RUL"}
+
+FULL_TOPK_FEATURES_BY_TARGET = {
+    "SOH": ["V_entropy", "V_std", "I_iqr", "V_iqr", "I_kurtosis", "V_median"],
+    "RUL": ["V_iqr", "I_std", "V_entropy", "V_std", "I_mean", "I_median"],
+}
+
+CHARGE_TOPK_FEATURES_BY_TARGET = {
+    "SOH": [
+        "charge_V_median",
+        "charge_I_median",
+        "charge_V_entropy",
+        "charge_V_std",
+        "charge_V_iqr",
+        "charge_I_std",
+    ],
+    "RUL": [
+        "charge_V_median",
+        "charge_I_median",
+        "charge_V_entropy",
+        "charge_I_std",
+    ],
+}
+
+FULL_NO_TEMPERATURE_FEATURE_COLUMNS = [
+    col
+    for col in FULL_CYCLE_FEATURE_COLUMNS
+    if col not in TEMPERATURE_FEATURE_COLUMNS
+]
+
+CHARGE_NO_TEMPERATURE_FEATURE_COLUMNS = [
+    col
+    for col in CHARGE_FEATURE_COLUMNS
+    if col not in {f"charge_{x}" for x in TEMPERATURE_FEATURE_COLUMNS}
+]
+
+SUPPORTED_FEATURE_SET_IDS = {
+    "full_all",
+    "full_topk",
+    "full_no_temp",
+    "charge_all",
+    "charge_topk",
+    "charge_no_temp",
+}
 
 
 def validate_required_columns(

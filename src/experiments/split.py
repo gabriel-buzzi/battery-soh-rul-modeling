@@ -36,9 +36,10 @@ def create_or_load_cell_split(
     tuple[list[str], list[str]]
         Train cell list and test cell list.
     """
-    split_dir.mkdir(parents=True, exist_ok=True)
-    train_cells_path = split_dir / "train_cells.json"
-    test_cells_path = split_dir / "test_cells.json"
+    split_dir_seed = split_dir / f"seed_{int(random_seed)}"
+    split_dir_seed.mkdir(parents=True, exist_ok=True)
+    train_cells_path = split_dir_seed / "train_cells.json"
+    test_cells_path = split_dir_seed / "test_cells.json"
 
     split_exists = train_cells_path.exists() and test_cells_path.exists()
     if split_exists and not force_recreate:

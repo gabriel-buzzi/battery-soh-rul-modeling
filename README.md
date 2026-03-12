@@ -93,7 +93,7 @@ python -m src.data.load_data
 python -m src.data.build_data
 
 # 3) Extract full-cycle + charge-only features and targets
-#    (SOH, RUL, RUL_THROUGHPUT)
+#    (SOH, RUL)
 python -m src.data.make_features
 ```
 
@@ -112,12 +112,12 @@ What it does:
 
 ```bash
 python -m src.experiments.runner \
-  tracks=full_cycle \
+  tracks=final_eval \
   target=SOH
 ```
 
 Main outputs:
-- `results/experiments/full_cycle/<run_id>/run_summary.json`
+- `results/experiments/final_eval/<run_id>/run_summary.json`
 - `table_main_metrics.csv/json`
 - `predictions_test.csv/json`
 
@@ -202,7 +202,7 @@ What it does:
 python -m src.experiments.runner \
   tracks=protocol_robustness \
   target=SOH \
-  features.view=charge_all
+  features.set_id=charge_all
 ```
 
 Main outputs:
