@@ -1,6 +1,7 @@
 """Load and organize data from Severson et. al."""
 
 import logging
+from pathlib import Path
 from typing import Any
 
 import h5py
@@ -149,6 +150,9 @@ def save_to_hdf5(all_batteries: dict, output_filename: str):
         Output HDF5 filename
     """
     logger.info(f"Saving data to {output_filename}...")
+
+    output_filename = Path(output_filename)
+    output_filename.parent.mkdir(exist_ok=True)
 
     with h5py.File(output_filename, "w") as f:
         # Create main batteries group
