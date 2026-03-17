@@ -1,10 +1,6 @@
-[build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
-
 [project]
-name = "src"
-version = "0.0.1"
+name = "severson_features_soh_rul"
+version = "1.0.0"
 description = "Utilizing features of cycling data from Severson et. al. fast-charging battery dataset to estimate cells SOH and RUL."
 authors = [
   { name = "Gabriel Buzzi Sanches" },
@@ -17,7 +13,6 @@ classifiers = [
 ]
 requires-python = "~=3.10.0"
 dependencies = ["hydra-core>=1.3.2,<2"]
-
 
 [tool.ruff]
 line-length = 79
@@ -35,11 +30,7 @@ combine-as-imports = true
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
-
 [tool.pixi.workspace]
-name = "severson_features_soh_rul"
-description = "Utilizing features of cycling data from Severson et. al. fast-charging battery dataset to estimate cells SOH and RUL."
-version = "0.1.0"
 channels = ["conda-forge"]
 platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 
@@ -68,15 +59,7 @@ pandoc = ">=3.8.3,<4"
 jupytext = ">=1.19.1,<2"
 
 [tool.pixi.pypi-dependencies]
-python-dotenv = "*"
-
-[tool.pixi.pypi-dependencies.src]
-path = "."
-editable = true
+severson_features_soh_rul = { path = ".", editable = true }
 
 [tool.pixi.activation.env]
-PYTHONPATH = "./src"
-PROJECT_NAME = "severson_features_soh_rul"
-
-[tool.pixi.tasks]
-register-kernel = { cmd = 'python -m ipykernel install --user --name pixi-$PROJECT_NAME --display-name "Pixi ($PROJECT_NAME)"' }
+PYTHONPATH = "$PIXI_PROJECT_ROOT"
