@@ -1,0 +1,32 @@
+{
+  "SOH": {
+    "n_cells": 25,
+    "worst_quartile_count": 7,
+    "worst_quartile_cells": [
+      "b1c20",
+      "b1c0",
+      "b2c1",
+      "b3c7",
+      "b2c42",
+      "b1c3",
+      "b3c39"
+    ],
+    "mean_rmse_worst_quartile": 1.4404431269406401,
+    "mean_rmse_remaining": 0.7750320413837817
+  },
+  "RUL": {
+    "n_cells": 25,
+    "worst_quartile_count": 7,
+    "worst_quartile_cells": [
+      "b3c7",
+      "b1c3",
+      "b2c1",
+      "b1c0",
+      "b3c25",
+      "b3c39",
+      "b1c36"
+    ],
+    "mean_rmse_worst_quartile": 172.6401086792204,
+    "mean_rmse_remaining": 48.91967730205693
+  }
+}
