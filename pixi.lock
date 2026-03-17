@@ -10995,7 +10995,7 @@ packages:
 - pypi: ./
   name: severson-features-soh-rul
   version: 1.0.0
-  sha256: dbe0ae84b526d5e4febeb51fdde2c6b42f2a9e41bb8e41bd8dd044e4d3865b4a
+  sha256: ff9cd97c37d05d4625d0a4b70ad96ecc143610ba573f87d8f23da2fffe5e7f14
   requires_dist:
   - hydra-core>=1.3.2,<2
   requires_python: ~=3.10.0

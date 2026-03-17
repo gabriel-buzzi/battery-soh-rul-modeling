@@ -1,18 +1,13 @@
 [project]
-name = "severson_features_soh_rul"
-version = "1.0.0"
-description = "Utilizing features of cycling data from Severson et. al. fast-charging battery dataset to estimate cells SOH and RUL."
-authors = [
-  { name = "Gabriel Buzzi Sanches" },
-]
-
-readme = "README.md"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    
-]
-requires-python = "~=3.10.0"
+authors = [{name = "Gabriel Buzzi Sanches", email = "gabrielbuzzi2@gmail.com"}]
 dependencies = ["hydra-core>=1.3.2,<2"]
+name = "severson_features_soh_rul"
+requires-python = "~=3.10.0"
+version = "1.0.0"
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
 
 [tool.ruff]
 line-length = 79
