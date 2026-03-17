@@ -5,10 +5,10 @@ from typing import Any
 from matplotlib import pyplot as plt
 
 # Widths from your LaTeX template
-LAYOUT = {
-    "one_column": 245.7,
-    "one_and_half_column": 377.85,
-    "double_column": 510.0,
+ELSEVIER_LAYOUT = {
+    "one_column": 255,
+    "one_and_half_column": 397,
+    "double_column": 539,
 }
 
 
@@ -36,7 +36,7 @@ def create_figure(
     """Create a matplotlib figure and axes using the configured layout."""
     # Matplotlib already loaded the matplotlibrc settings!
 
-    width_pt = LAYOUT[_normalize_layout(layout_type)]
+    width_pt = ELSEVIER_LAYOUT[_normalize_layout(layout_type)]
     width_in = width_pt / 72.27
     height_in = width_in * aspect_ratio * (nrows / ncols)
 
