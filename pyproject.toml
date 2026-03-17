@@ -65,6 +65,7 @@ xgboost = ">=3.0.2,<4"
 hydra-joblib-launcher = ">=1.2.0,<2"
 lightgbm = ">=4.6.0,<5"
 pandoc = ">=3.8.3,<4"
+jupytext = ">=1.19.1,<2"
 
 [tool.pixi.pypi-dependencies]
 python-dotenv = "*"
