@@ -12,7 +12,7 @@ from sklearn.metrics import (
     root_mean_squared_error,
 )
 
-from src.experiments.models import build_extratrees
+from severson_features_soh_rul.modeling.models import build_extratrees
 
 logger = logging.getLogger(__name__)
 
