@@ -4,16 +4,16 @@
 text.usetex:         True
 font.family:         serif
 font.serif:          Computer Modern Roman
-font.size:           10.0
+font.size:           9.0
 
 ## AXES AND TICKS
-axes.labelsize:      10.0
-axes.titlesize:      10.0
+axes.labelsize:      9.0
+axes.titlesize:      9.0
 axes.linewidth:      0.8
 axes.grid:           False
 
-xtick.labelsize:     8.0
-ytick.labelsize:     8.0
+xtick.labelsize:     7.0
+ytick.labelsize:     7.0
 xtick.direction:     in
 ytick.direction:     in
 xtick.top:           True
@@ -24,7 +24,7 @@ xtick.minor.visible: False
 ytick.minor.visible: False
 
 ## LEGEND
-legend.fontsize:     8.0
+legend.fontsize:     7.0
 legend.frameon:      False
 legend.loc:          best
 
