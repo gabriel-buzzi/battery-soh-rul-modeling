@@ -1,0 +1,44 @@
+#### MATPLOTLIBRC FORMAT ####
+
+## TEXT AND FONTS
+text.usetex:         True
+font.family:         serif
+font.serif:          Computer Modern Roman
+font.size:           10.0
+
+## AXES AND TICKS
+axes.labelsize:      10.0
+axes.titlesize:      10.0
+axes.linewidth:      0.8
+axes.grid:           False
+
+xtick.labelsize:     8.0
+ytick.labelsize:     8.0
+xtick.direction:     in
+ytick.direction:     in
+xtick.top:           True
+ytick.right:         True
+xtick.major.size:    3.5
+xtick.minor.size:    2.0
+xtick.minor.visible: False
+ytick.minor.visible: False
+
+## LEGEND
+legend.fontsize:     8.0
+legend.frameon:      False
+legend.loc:          best
+
+## FIGURE AND SAVING
+figure.constrained_layout.use: True
+savefig.dpi:         300
+savefig.format:      pdf
+savefig.bbox:        tight
+savefig.pad_inches:  0.05
+
+## COLOR CYCLE (High-contrast qualitative)
+axes.prop_cycle: cycler('color', ['0072B2', '009E73', 'D55E00', 'CC79A7', 'F0E442', '56B4E9'])
+
+## LIGHTWEIGHT SETTINGS
+path.simplify: True           # Removes "invisible" points on lines
+path.simplify_threshold: 0.1  # Increase (up to 1.0) to simplify more aggressively
+agg.path.chunksize: 10000     # Helps with very large datasets
