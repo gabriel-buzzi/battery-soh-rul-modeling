@@ -234,3 +234,8 @@ Main outputs:
 ## 📄 Scientific Context
 
 This code supports a research paper. The directory `paper/` contains the LaTeX source, which details the physical interpretation of the features (e.g., correlation between voltage curve variance and capacity fade) and the degradation patterns observed.
+
+In order to push the paper content from the Overleaf project please run the following at the root dir of this project
+```bash
+git submodule update --init --recursive
+```
