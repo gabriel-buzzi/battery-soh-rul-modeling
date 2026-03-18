@@ -1,10 +1,15 @@
 #### MATPLOTLIBRC FORMAT ####
 
 ## TEXT AND FONTS
-text.usetex:         True
+text.usetex:         False
 font.family:         serif
-font.serif:          Computer Modern Roman
+font.serif:          Times New Roman, Times
 font.size:           9.0
+
+## VECTOR FONT EMBEDDING
+pdf.fonttype:        42
+ps.fonttype:         42
+svg.fonttype:        none
 
 ## AXES AND TICKS
 axes.labelsize:      9.0
@@ -28,9 +33,14 @@ legend.fontsize:     7.0
 legend.frameon:      False
 legend.loc:          best
 
+## LINES AND MARKERS
+lines.linewidth:     1.0
+lines.markersize:    4.5
+errorbar.capsize:    2.0
+
 ## FIGURE AND SAVING
 figure.constrained_layout.use: True
-savefig.dpi:         300
+savefig.dpi:         500
 savefig.format:      pdf
 savefig.bbox:        tight
 savefig.pad_inches:  0.05
