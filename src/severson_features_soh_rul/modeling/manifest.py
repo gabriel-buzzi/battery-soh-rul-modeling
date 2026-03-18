@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from src.experiments.runtime_helpers import ARTIFACT_SCHEMA_VERSION
+from severson_features_soh_rul.modeling.runtime_helpers import ARTIFACT_SCHEMA_VERSION
 
 MANIFEST_SCHEMA_VERSION = "1.0.0"
 

@@ -7,25 +7,25 @@ from pathlib import Path
 from omegaconf import DictConfig
 import pandas as pd
 
-from src.experiments.io import (
+from severson_features_soh_rul.modeling.io import (
     collect_run_metadata,
     create_run_dir,
     save_dataframe_csv,
     save_json,
     save_resolved_config,
 )
-from src.experiments.manifest import append_run_to_manifest
-from src.experiments.optimization_helpers import (
+from severson_features_soh_rul.modeling.manifest import append_run_to_manifest
+from severson_features_soh_rul.modeling.optimization_helpers import (
     build_optimization_cache_key,
     get_or_run_optimization,
     resolve_optimization_features,
 )
-from src.experiments.protocol_robustness import (
+from severson_features_soh_rul.modeling.protocol_robustness import (
     build_protocol_families,
     run_protocol_family_holdout,
     summarize_protocol_robustness,
 )
-from src.experiments.runtime_helpers import (
+from severson_features_soh_rul.modeling.runtime_helpers import (
     ARTIFACT_SCHEMA_VERSION,
     build_feature_signature,
     build_run_purpose,

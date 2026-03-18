@@ -99,7 +99,7 @@ python -m src.data.make_features
 
 ### 3. Manual Track Execution (New Experiments Pipeline)
 
-All revision experiments are run manually track-by-track via `src.experiments.runner`.
+All revision experiments are run manually track-by-track via `severson_features_soh_rul.modeling.runner`.
 This is the recommended flow for paper writing because each step generates explicit artifacts you can inspect before moving to the next one.
 
 #### 3.1 Baseline Full-Cycle Training/Evaluation
@@ -111,7 +111,7 @@ What it does:
 - exports paper-ready summaries and diagnostics artifacts.
 
 ```bash
-python -m src.experiments.runner \
+python -m severson_features_soh_rul.modeling.runner \
   tracks=final_eval \
   target=SOH
 ```
@@ -132,7 +132,7 @@ What it does:
 - top-k plots for RMSE and relative gap.
 
 ```bash
-python -m src.experiments.runner \
+python -m severson_features_soh_rul.modeling.runner \
   tracks=full_cycle_feature_analysis \
   target=SOH
 ```
@@ -151,7 +151,7 @@ What it does:
 - same analysis flow as full-cycle, but using `charge_*` features only.
 
 ```bash
-python -m src.experiments.runner \
+python -m severson_features_soh_rul.modeling.runner \
   tracks=charge_only_feature_analysis \
   target=SOH
 ```
@@ -166,7 +166,7 @@ What it does:
 - aggregates sample-level uncertainty and region summaries.
 
 ```bash
-python -m src.experiments.runner \
+python -m severson_features_soh_rul.modeling.runner \
   tracks=uncertainty \
   target=SOH
 ```
@@ -183,7 +183,7 @@ What it does:
 - identifies difficult cells and where error concentrates along life.
 
 ```bash
-python -m src.experiments.runner \
+python -m severson_features_soh_rul.modeling.runner \
   tracks=diagnostics \
   target=SOH
 ```
@@ -199,7 +199,7 @@ What it does:
 - performs leave-one-family-out robustness evaluation.
 
 ```bash
-python -m src.experiments.runner \
+python -m severson_features_soh_rul.modeling.runner \
   tracks=protocol_robustness \
   target=SOH \
   features.set_id=charge_all
@@ -216,7 +216,7 @@ What it does:
 - writes merged tables under `results/paper_tables/<export_id>/`.
 
 ```bash
-python -m src.experiments.export_paper_tables
+python -m severson_features_soh_rul.modeling.export_paper_tables
 ```
 
 Main outputs:

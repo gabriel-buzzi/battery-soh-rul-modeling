@@ -8,30 +8,30 @@ import hydra
 from hydra.utils import to_absolute_path
 from omegaconf import DictConfig
 
-from src.experiments.dataset import (
+from severson_features_soh_rul.modeling.dataset import (
     load_features_dataframe,
     resolve_feature_columns,
 )
-from src.experiments.schemas import (
+from severson_features_soh_rul.modeling.schemas import (
     CHARGE_FEATURE_COLUMNS,
     FULL_CYCLE_FEATURE_COLUMNS,
     SUPPORTED_TARGETS,
     TEMPERATURE_FEATURE_COLUMNS,
     validate_required_columns,
 )
-from src.experiments.split import apply_cell_split, create_or_load_cell_split
-from src.experiments.tracks.diagnostics import run_diagnostics_track
-from src.experiments.tracks.feature_analysis import run_feature_analysis_track
-from src.experiments.tracks.final_eval import run_final_eval_track
-from src.experiments.tracks.protocol_robustness import (
+from severson_features_soh_rul.modeling.split import apply_cell_split, create_or_load_cell_split
+from severson_features_soh_rul.modeling.tracks.diagnostics import run_diagnostics_track
+from severson_features_soh_rul.modeling.tracks.feature_analysis import run_feature_analysis_track
+from severson_features_soh_rul.modeling.tracks.final_eval import run_final_eval_track
+from severson_features_soh_rul.modeling.tracks.protocol_robustness import (
     run_protocol_robustness_track,
 )
-from src.experiments.tracks.uncertainty import run_uncertainty_track
+from severson_features_soh_rul.modeling.tracks.uncertainty import run_uncertainty_track
 
 
 @hydra.main(
     version_base=None,
-    config_path="../conf/experiments",
+    config_path="../../../config/experiments",
     config_name="base",
 )
 def run_experiment(cfg: DictConfig) -> None:

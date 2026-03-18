@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.metrics import root_mean_squared_error
 from sklearn.model_selection import GroupKFold
 
-from src.experiments.models import build_extratrees
+from severson_features_soh_rul.modeling.models import build_extratrees
 
 
 def compute_feature_rankings(

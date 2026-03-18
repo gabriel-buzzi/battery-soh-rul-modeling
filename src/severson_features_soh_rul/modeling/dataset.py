@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.experiments.schemas import (
+from severson_features_soh_rul.modeling.schemas import (
     BASE_REQUIRED_COLUMNS,
     CHARGE_FEATURE_COLUMNS,
     CHARGE_NO_TEMPERATURE_FEATURE_COLUMNS,

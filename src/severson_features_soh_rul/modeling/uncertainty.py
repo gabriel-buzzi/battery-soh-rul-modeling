@@ -7,8 +7,8 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 
-from src.experiments.cv import regression_metrics
-from src.experiments.models import build_extratrees
+from severson_features_soh_rul.modeling.cv import regression_metrics
+from severson_features_soh_rul.modeling.models import build_extratrees
 
 SOH_REGION_DEFINITION = {
     "units": "percent",

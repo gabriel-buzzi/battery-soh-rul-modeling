@@ -8,7 +8,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from src.experiments.artifact_contract import (
+from severson_features_soh_rul.modeling.artifact_contract import (
     validate_optimization_cache_dir,
     validate_track_run_dir,
 )

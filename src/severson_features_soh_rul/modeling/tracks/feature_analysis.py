@@ -8,31 +8,31 @@ from pathlib import Path
 from omegaconf import DictConfig
 import pandas as pd
 
-from src.experiments.ablations import (
+from severson_features_soh_rul.modeling.ablations import (
     evaluate_feature_subset_cv,
     run_leave_one_out,
     run_topk_sweep,
 )
-from src.experiments.io import (
+from severson_features_soh_rul.modeling.io import (
     collect_run_metadata,
     create_run_dir,
     save_dataframe_csv,
     save_json,
     save_resolved_config,
 )
-from src.experiments.manifest import append_run_to_manifest
-from src.experiments.optimization_helpers import (
+from severson_features_soh_rul.modeling.manifest import append_run_to_manifest
+from severson_features_soh_rul.modeling.optimization_helpers import (
     build_optimization_cache_key,
     get_or_run_optimization,
     resolve_optimization_features,
 )
-from src.experiments.optimize import OBJECTIVE_FORMULA, OBJECTIVE_NAME
-from src.experiments.plotting import (
+from severson_features_soh_rul.modeling.optimize import OBJECTIVE_FORMULA, OBJECTIVE_NAME
+from severson_features_soh_rul.modeling.plotting import (
     plot_topk_vs_relative_gap,
     plot_topk_vs_val_rmse,
 )
-from src.experiments.ranking import compute_feature_rankings
-from src.experiments.runtime_helpers import (
+from severson_features_soh_rul.modeling.ranking import compute_feature_rankings
+from severson_features_soh_rul.modeling.runtime_helpers import (
     ARTIFACT_SCHEMA_VERSION,
     build_feature_signature,
     build_run_purpose,
@@ -42,7 +42,7 @@ from src.experiments.runtime_helpers import (
     target_unit,
     track_family,
 )
-from src.experiments.schemas import validate_required_columns
+from severson_features_soh_rul.modeling.schemas import validate_required_columns
 
 logger = logging.getLogger(__name__)
 

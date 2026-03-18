@@ -24,7 +24,7 @@ run_exp() {
   shift
   echo
   echo "==> ${label}"
-  "$PYTHON_BIN" -m src.experiments.runner \
+  "$PYTHON_BIN" -m severson_features_soh_rul.modeling.runner \
     artifacts.campaign_id="$CAMPAIGN_ID" \
     "$@"
 }
@@ -70,7 +70,7 @@ for target in "${TARGETS[@]}"; do
 
   echo
   echo "==> Exporting paper tables for target=${target}"
-  "$PYTHON_BIN" -m src.experiments.export_paper_tables \
+  "$PYTHON_BIN" -m severson_features_soh_rul.modeling.export_paper_tables \
     artifacts.campaign_id="$CAMPAIGN_ID" \
     target="$target"
 done

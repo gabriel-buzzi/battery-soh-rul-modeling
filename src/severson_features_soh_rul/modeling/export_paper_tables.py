@@ -11,7 +11,7 @@ from hydra.utils import to_absolute_path
 from omegaconf import DictConfig
 import pandas as pd
 
-from src.experiments.io import (
+from severson_features_soh_rul.modeling.io import (
     save_dataframe_csv,
     save_json,
 )
@@ -80,7 +80,7 @@ def _require_reviewer_mapping(
 
 @hydra.main(
     version_base=None,
-    config_path="../conf/experiments",
+    config_path="../../../config/experiments",
     config_name="base",
 )
 def export_paper_tables(cfg: DictConfig) -> None:

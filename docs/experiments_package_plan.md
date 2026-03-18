@@ -255,7 +255,7 @@ Acceptance criteria:
 ### Smoke test command
 Run from repository root:
 ```bash
-python -m src.experiments.runner \
+python -m severson_features_soh_rul.modeling.runner \
   data.features_data_path=./data/interim/features.parquet \
   data.split_dir=./results/experiments/splits \
   artifacts.root_dir=./results/experiments \
