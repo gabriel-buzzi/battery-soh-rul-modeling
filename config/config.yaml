@@ -36,7 +36,10 @@ modeling:
 
 analysis:
   figures_folder: ./paper/figures
-  example_cell: b1c14
+  # example_cell: b1c14 # Default cells compliant with most plots
+  example_cell: b1c20
+  # Worst cells for SOH: b1c20, b1c0, b2c1, b3c7, b2c42, b1c3, b3c39
+  # Worst cells for RUL: b3c7, b1c3, b2c1, b1c0, b3c25, b3c39, b1c36
 
 defaults:
   - _self_

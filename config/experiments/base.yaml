@@ -79,7 +79,7 @@ protocol_robustness:
 # ----------------------------
 artifacts:
   root_dir: ./results/experiments # root output directory for track run artifacts
-  campaign_id: revision_round1 # campaign namespace: artifacts stored under <root_dir>/<campaign_id>/<target>/<track>/<run_id>/
+  campaign_id: revision_round2 # campaign namespace: artifacts stored under <root_dir>/<campaign_id>/<target>/<track>/<run_id>/
   run_name: null # optional fixed run id/name; null -> timestamp-based
   run_role: null # optional explicit semantic role for this run (e.g., compact_subset_followup)
   paper_section: null # optional manuscript mapping hint (e.g., Table 4 follow-up)
