@@ -17,6 +17,7 @@ from severson_features_soh_rul.modeling.stages.predict import (
 
 def run_stage(cfg: Any) -> dict[str, Any]:
     """Run optimize -> fit_final_model -> predict."""
+    print("[baseline_flow] running")
     optimize_result = run_optimize(cfg)
     fit_result = run_fit_final_model(cfg)
     predict_result = run_predict(cfg)

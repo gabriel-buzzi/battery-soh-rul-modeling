@@ -32,6 +32,7 @@ from severson_features_soh_rul.modeling.stages.common import (
 
 def run_stage(cfg: Any) -> dict[str, Any]:
     """Execute optimize stage."""
+    print("[optimize] running")
     context = prepare_runtime_context(cfg=cfg, stage="optimize")
     if not context.optimize_cfg.enabled:
         raise ValueError(

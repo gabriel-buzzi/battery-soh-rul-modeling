@@ -30,6 +30,7 @@ from severson_features_soh_rul.modeling.stages.common import (
 
 def run_stage(cfg: Any) -> dict[str, Any]:
     """Execute fit_final_model stage."""
+    print("[fit_final_model] running")
     base_context = prepare_runtime_context(
         cfg=cfg,
         stage="fit_final_model",

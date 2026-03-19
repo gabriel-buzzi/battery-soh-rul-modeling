@@ -40,6 +40,7 @@ from severson_features_soh_rul.modeling.stages.rank import (
 
 def run_stage(cfg: Any) -> dict[str, Any]:
     """Execute top-k sweep stage."""
+    print("[topk_sweep] running")
     rank_cfg = OmegaConf.create(OmegaConf.to_container(cfg, resolve=False))
     rank_cfg.stage = "rank"
     rank_cfg.artifacts.overwrite = True

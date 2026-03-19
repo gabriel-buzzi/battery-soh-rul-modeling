@@ -33,6 +33,7 @@ from severson_features_soh_rul.modeling.stages.common import (
 
 def run_stage(cfg: Any) -> dict[str, Any]:
     """Execute strict protocol LOPO robustness stage."""
+    print("[robustness_protocol_lopo] running")
     context = prepare_runtime_context(
         cfg=cfg,
         stage="robustness_protocol_lopo",

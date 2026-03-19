@@ -25,6 +25,7 @@ from severson_features_soh_rul.modeling.stages.common import (
 
 def run_stage(cfg: Any) -> dict[str, Any]:
     """Execute rank stage from permutation prediction artifacts."""
+    print("[rank] running")
     context = prepare_runtime_context(cfg=cfg, stage="rank")
     stage_dir, skipped = prepare_stage_dir(
         root_dir=context.artifacts_cfg.root_dir,

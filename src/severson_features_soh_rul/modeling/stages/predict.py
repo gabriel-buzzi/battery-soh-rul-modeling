@@ -28,6 +28,7 @@ from severson_features_soh_rul.modeling.stages.common import (
 
 def run_stage(cfg: Any) -> dict[str, Any]:
     """Execute predict stage."""
+    print("[predict] running")
     base_context = prepare_runtime_context(cfg=cfg, stage="predict")
 
     selected_k: int | None = None
