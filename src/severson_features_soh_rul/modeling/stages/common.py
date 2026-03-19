@@ -79,6 +79,18 @@ class RuntimeContext:
     stage_context: dict[str, Any]
 
 
+def resolve_effective_model_n_jobs(
+    stage: str,
+    model_n_jobs: int,
+    optimize_n_jobs: int,
+) -> int:
+    """Resolve effective model n_jobs for the current stage."""
+    normalized_stage = str(stage).strip()
+    if normalized_stage == "optimize":
+        return int(model_n_jobs)
+    return int(model_n_jobs) * int(optimize_n_jobs)
+
+
 def prepare_runtime_context(
     cfg: DictConfig,
     stage: str,
@@ -91,6 +103,11 @@ def prepare_runtime_context(
     split_cfg = parse_split_config(cfg)
     model_cfg = parse_model_config(cfg)
     optimize_cfg = parse_optimize_config(cfg)
+    effective_model_n_jobs = resolve_effective_model_n_jobs(
+        stage=stage,
+        model_n_jobs=model_cfg.n_jobs,
+        optimize_n_jobs=optimize_cfg.n_jobs,
+    )
     conformal_cfg = parse_conformal_config(cfg)
     ranking_cfg = parse_ranking_config(cfg)
     topk_cfg = parse_topk_config(cfg)
@@ -167,7 +184,11 @@ def prepare_runtime_context(
             split_dir=split_dir,
             force_recreate=split_cfg.force_recreate,
         ),
-        model_cfg=model_cfg,
+        model_cfg=ModelConfig(
+            name=model_cfg.name,
+            random_seed=model_cfg.random_seed,
+            n_jobs=effective_model_n_jobs,
+        ),
         optimize_cfg=optimize_cfg,
         conformal_cfg=conformal_cfg,
         ranking_cfg=ranking_cfg,

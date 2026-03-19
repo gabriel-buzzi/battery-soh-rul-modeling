@@ -1,4 +1,4 @@
-stage: baseline_flow
+stage: all_stages
 target: SOH
 
 data:
@@ -19,7 +19,7 @@ topk:
 
 model:
   name: extratrees
-  n_jobs: 1 # n_jobs for running the model
+  n_jobs: 1 # n_jobs for running the model, will be multiplied internally by optimize.n_jobs when stage is not optimize
 
 optimize:
   enabled: true

@@ -8,6 +8,9 @@ import hydra
 from omegaconf import DictConfig
 
 from severson_features_soh_rul.modeling.config.schema import validate_stage
+from severson_features_soh_rul.modeling.stages.all_stages import (
+    run_stage as run_all_stages,
+)
 from severson_features_soh_rul.modeling.stages.baseline_flow import (
     run_stage as run_baseline_flow,
 )
@@ -41,7 +44,9 @@ def run_pipeline(cfg: DictConfig) -> None:
     """Dispatch execution to selected stage."""
     stage = validate_stage(str(cfg.stage))
 
-    if stage == "optimize":
+    if stage == "all_stages":
+        result = run_all_stages(cfg)
+    elif stage == "optimize":
         result = run_optimize(cfg)
     elif stage == "permutation_importance":
         result = run_permutation_importance(cfg)
@@ -62,6 +67,7 @@ def run_pipeline(cfg: DictConfig) -> None:
             "Unsupported stage='{}'. Supported: {}".format(
                 stage,
                 [
+                    "all_stages",
                     "optimize",
                     "permutation_importance",
                     "rank",

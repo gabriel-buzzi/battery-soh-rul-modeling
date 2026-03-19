@@ -124,11 +124,11 @@ hydra:
   overrides:
     hydra: []
     task:
-    - stage=optimize
+    - stage=all_stages
   job:
     name: pipeline
     chdir: false
-    override_dirname: stage=optimize
+    override_dirname: stage=all_stages
     id: ???
     num: ???
     config_name: modeling
@@ -185,7 +185,7 @@ features:
   - T_std
   - T_iqr
   - T_kurtosis
-stage: optimize
+stage: all_stages
 target: SOH
 data:
   features_path: data/interim/features.parquet

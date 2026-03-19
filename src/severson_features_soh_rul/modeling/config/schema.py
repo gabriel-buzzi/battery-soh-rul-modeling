@@ -30,6 +30,7 @@ from severson_features_soh_rul.modeling.config.defaults import (
 )
 
 SUPPORTED_STAGES = {
+    "all_stages",
     "optimize",
     "permutation_importance",
     "rank",
