@@ -1,0 +1,130 @@
+stage: baseline_flow
+target: SOH
+
+data:
+  features_path: data/interim/features.parquet
+  protocol_column: charge_policy
+
+split:
+  train_cells_proportion: 0.8
+  seed: 42
+  split_dir: ./results/modeling/splits
+  force_recreate: false
+
+features:
+  id: null
+  columns:
+    - V_mean
+    - V_median
+    - V_std
+    - V_iqr
+    - V_kurtosis
+    - V_entropy
+    - I_mean
+    - I_median
+    - I_std
+    - I_iqr
+    - I_kurtosis
+    - T_mean
+    - T_median
+    - T_std
+    - T_iqr
+    - T_kurtosis
+  hash_mode: order_invariant
+  selection_mode: base
+  topk:
+    k_values: [2, 4, 6, 8, 10, 12, 16]
+    selection_rule: smallest_feasible
+    constraints:
+      tau_rmse: 0.05
+      tau_width: 0.10
+
+model:
+  name: extratrees
+  n_jobs: 4
+
+optimize:
+  enabled: true
+  n_trials: 80
+  cv_folds: 5
+  save_cv_trials: true
+  objective:
+    tau_gap: 0.05
+    lambda_gap: 0.5
+  search_space:
+    n_estimators:
+      type: int
+      low: 50
+      high: 500
+    criterion:
+      type: fixed
+      value: squared_error
+    max_depth:
+      type: int
+      low: 3
+      high: 20
+    min_samples_split:
+      type: int
+      low: 2
+      high: 20
+    min_samples_leaf:
+      type: int
+      low: 1
+      high: 10
+    max_features:
+      type: categorical
+      choices: [sqrt, log2, null]
+
+conformal:
+  enabled: true
+  alpha: 0.1
+  calibration_proportion: 0.2
+
+ranking:
+  n_repeats: 5
+  weights:
+    rmse: 0.7
+    uncertainty: 0.3
+  rescale:
+    mode: quantile_clipped_minmax
+    clip_low_q: 0.05
+    clip_high_q: 0.95
+
+robustness:
+  mode: protocol_lopo
+
+weighting:
+  enabled: false
+  strategy: none
+  n_bins: 10
+  long_life_quantile: 0.75
+  long_life_boost_factor: 2.0
+
+predict:
+  split: test
+
+artifacts:
+  root_dir: ./results/modeling
+  naming_key: feature_id_or_hash
+  run_key_fields:
+    - target
+    - feature_hash
+    - split_seed
+    - model_name
+    - weighting_strategy
+    - k_selected
+  overwrite: false
+  require_exact_match: true
+
+defaults:
+  - _self_
+  - override hydra/launcher: joblib
+
+hydra:
+  run:
+    dir: .
+  output_subdir: null
+  job:
+    chdir: false
+  launcher:
+    n_jobs: 1

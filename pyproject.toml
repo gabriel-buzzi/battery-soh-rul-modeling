@@ -1,6 +1,6 @@
 [project]
 authors = [{name = "Gabriel Buzzi Sanches", email = "gabrielbuzzi2@gmail.com"}]
-dependencies = ["hydra-core>=1.3.2,<2"]
+dependencies = ["hydra-core>=1.3.2,<2", "mapie>=0.9.1,<1"]
 name = "severson_features_soh_rul"
 requires-python = "~=3.10.0"
 version = "1.0.0"
@@ -42,6 +42,7 @@ pyarrow = ">=21.0.0,<22"
 scipy = ">=1.15.2,<2"
 matplotlib = ">=3.10.3,<4"
 scikit-learn = ">=1.7.1,<2"
+mapie = ">=0.9.1,<1"
 plotly = ">=6.2.0,<7"
 seaborn = ">=0.13.2,<0.14"
 optuna = ">=4.4.0,<5"

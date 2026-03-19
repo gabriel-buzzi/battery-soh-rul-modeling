@@ -97,139 +97,56 @@ python -m src.data.build_data
 python -m src.data.make_features
 ```
 
-### 3. Manual Track Execution (New Experiments Pipeline)
+### 3. Modeling Pipeline Execution
 
-All revision experiments are run manually track-by-track via `severson_features_soh_rul.modeling.runner`.
-This is the recommended flow for paper writing because each step generates explicit artifacts you can inspect before moving to the next one.
-
-#### 3.1 Baseline Full-Cycle Training/Evaluation
-
-What it does:
-- creates/reuses deterministic train/test cell split;
-- runs (or reuses cached) optimization;
-- trains on train split and evaluates on held-out test split;
-- exports paper-ready summaries and diagnostics artifacts.
+The modeling flow now uses a single entrypoint:
 
 ```bash
-python -m severson_features_soh_rul.modeling.runner \
-  tracks=final_eval \
+python -m severson_features_soh_rul.modeling.pipeline stage=<stage>
+```
+
+Configuration is defined in `config/modeling.yaml`, with `features.columns` as the only feature source of truth.
+
+#### 3.1 Baseline Flow (One Command)
+
+Runs: `optimize -> fit_final_model -> predict`
+
+```bash
+python -m severson_features_soh_rul.modeling.pipeline \
+  stage=baseline_flow \
   target=SOH
 ```
 
-Main outputs:
-- `results/experiments/final_eval/<run_id>/run_summary.json`
-- `table_main_metrics.csv/json`
-- `predictions_test.csv/json`
-
-#### 3.2 Full-Cycle Feature Analysis
-
-What it does:
-- permutation and intrinsic ranking;
-- top-k sweep with cached full-feature baseline row;
-- heuristic/manual `selected_k`;
-- leave-one-out (LOO) inside selected subset;
-- no-temperature comparison;
-- top-k plots for RMSE and relative gap.
+#### 3.2 Individual Stages
 
 ```bash
-python -m severson_features_soh_rul.modeling.runner \
-  tracks=full_cycle_feature_analysis \
-  target=SOH
+python -m severson_features_soh_rul.modeling.pipeline stage=optimize target=SOH
+python -m severson_features_soh_rul.modeling.pipeline stage=rank target=SOH
+python -m severson_features_soh_rul.modeling.pipeline stage=topk_sweep target=SOH
+python -m severson_features_soh_rul.modeling.pipeline stage=fit_final_model target=SOH
+python -m severson_features_soh_rul.modeling.pipeline stage=predict target=SOH
+python -m severson_features_soh_rul.modeling.pipeline stage=robustness_protocol_lopo target=SOH
 ```
 
-Main outputs:
-- `feature_ranking_permutation.csv/json`
-- `topk_sweep_metrics.csv/json`
-- `loo_metrics.csv/json`
-- `no_temp_metrics.json`
-- `topk_vs_val_rmse.png`
-- `topk_vs_relative_gap.png`
+#### 3.3 Artifact Layout and Guarantees
 
-#### 3.3 Charge-Only Feature Analysis
+Artifacts are stored under:
 
-What it does:
-- same analysis flow as full-cycle, but using `charge_*` features only.
-
-```bash
-python -m severson_features_soh_rul.modeling.runner \
-  tracks=charge_only_feature_analysis \
-  target=SOH
+```text
+results/modeling/<run_key>/<stage>/
 ```
 
-Main outputs:
-- same artifact interface as full-cycle feature analysis.
-
-#### 3.4 Uncertainty Analysis
-
-What it does:
-- repeated-seed retraining with fixed split and fixed optimized hyperparameters;
-- aggregates sample-level uncertainty and region summaries.
-
-```bash
-python -m severson_features_soh_rul.modeling.runner \
-  tracks=uncertainty \
-  target=SOH
-```
-
-Main outputs:
-- `predictions_repeated.csv/json`
-- `uncertainty_summary.json`
-- `uncertainty_by_region.csv/json`
-
-#### 3.5 Difficult-Cell Diagnostics
-
-What it does:
-- computes per-cell error diagnostics;
-- identifies difficult cells and where error concentrates along life.
-
-```bash
-python -m severson_features_soh_rul.modeling.runner \
-  tracks=diagnostics \
-  target=SOH
-```
-
-Main outputs:
-- `error_cells_summary.csv/json`
-- `diagnostics_summary.json`
-
-#### 3.6 Protocol-Family Robustness
-
-What it does:
-- builds protocol families from max charging C-rate bins + rest presence inferred from protocol labels;
-- performs leave-one-family-out robustness evaluation.
-
-```bash
-python -m severson_features_soh_rul.modeling.runner \
-  tracks=protocol_robustness \
-  target=SOH \
-  features.set_id=charge_all
-```
-
-Main outputs:
-- `protocol_family_results.csv/json`
-- `protocol_robustness_summary.json`
-
-#### 3.7 Export Manuscript-Ready Tables
-
-What it does:
-- collects latest outputs from relevant tracks;
-- writes merged tables under `results/paper_tables/<export_id>/`.
-
-```bash
-python -m severson_features_soh_rul.modeling.export_paper_tables
-```
-
-Main outputs:
-- `table_main_comparison.csv/json`
-- `table_feature_analysis.csv/json`
-- `table_uncertainty.csv/json`
-- `table_robustness.csv/json`
+Each stage writes:
+- `config.resolved.yaml`
+- `run_info.json`
+- stage-specific artifacts (for example `predictions_test.csv`, `best_params.json`, ranking/top-k outputs)
 
 ### 4. Notes on Reproducibility and Caching
 
-- Optimization cache is enabled by default. If target, feature space, split, or optimization settings do not change, optimization results are reused automatically.
-- Split files are persisted under `results/experiments/splits/`; keep them stable to compare runs fairly.
-- For full reproducibility in papers, cite `run_summary.json` and `artifacts_index.json` from each run directory.
+- Run identity is deterministic from metadata (`target`, `feature_hash`, `split_seed`, `model_name`, `weighting_strategy`, optional `k_selected`).
+- Split files are persisted under `results/modeling/splits/`; keep them stable to compare runs fairly.
+- Re-running with the same config reuses stage artifacts by default (`artifacts.overwrite=false`).
+- Upstream dependencies are resolved by `run_info.json` metadata matching, with deterministic failure on missing or ambiguous matches when `artifacts.require_exact_match=true`.
 
 ## 📄 Scientific Context
 

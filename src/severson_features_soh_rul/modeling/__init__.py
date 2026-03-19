@@ -1,1 +1,1 @@
-"""Experiment pipeline package for revision tracks."""
+"""Prediction-first modeling pipeline package."""
