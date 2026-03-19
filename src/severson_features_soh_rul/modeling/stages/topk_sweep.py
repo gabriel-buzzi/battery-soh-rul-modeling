@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import Any
 
 import numpy as np
@@ -37,10 +38,12 @@ from severson_features_soh_rul.modeling.stages.rank import (
     run_stage as run_rank,
 )
 
+LOGGER = logging.getLogger(__name__)
+
 
 def run_stage(cfg: Any) -> dict[str, Any]:
     """Execute top-k sweep stage."""
-    print("[topk_sweep] running")
+    LOGGER.info("[topk_sweep] running")
     rank_cfg = OmegaConf.create(OmegaConf.to_container(cfg, resolve=False))
     rank_cfg.stage = "rank"
     rank_cfg.artifacts.overwrite = True
@@ -108,7 +111,7 @@ def run_stage(cfg: Any) -> dict[str, Any]:
     k_values = sorted(set([*requested_k, total_features]))
     if not k_values:
         raise ValueError(
-            "topk_sweep requires features.topk.k_values with values within "
+            "topk_sweep requires topk.k_values with values within "
             "[1, n_features]."
         )
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import optuna
@@ -29,10 +30,12 @@ from severson_features_soh_rul.modeling.stages.common import (
     prepare_runtime_context,
 )
 
+LOGGER = logging.getLogger(__name__)
+
 
 def run_stage(cfg: Any) -> dict[str, Any]:
     """Execute optimize stage."""
-    print("[optimize] running")
+    LOGGER.info("[optimize] running")
     context = prepare_runtime_context(cfg=cfg, stage="optimize")
     if not context.optimize_cfg.enabled:
         raise ValueError(

@@ -12,18 +12,7 @@ def test_feature_hash_order_invariant_is_stable() -> None:
     """Order-invariant hash should ignore column ordering."""
     cols_a = ["a", "b", "c"]
     cols_b = ["c", "a", "b"]
-    assert build_feature_hash(cols_a, "order_invariant") == build_feature_hash(
-        cols_b, "order_invariant"
-    )
-
-
-def test_feature_hash_order_sensitive_changes_with_order() -> None:
-    """Order-sensitive hash should depend on sequence order."""
-    cols_a = ["a", "b", "c"]
-    cols_b = ["c", "a", "b"]
-    assert build_feature_hash(cols_a, "order_sensitive") != build_feature_hash(
-        cols_b, "order_sensitive"
-    )
+    assert build_feature_hash(cols_a) == build_feature_hash(cols_b)
 
 
 def test_feature_set_id_falls_back_to_hash() -> None:

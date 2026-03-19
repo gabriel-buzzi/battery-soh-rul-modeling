@@ -62,31 +62,19 @@ def validate_required_columns(
 
 def build_feature_hash(
     feature_columns: list[str],
-    hash_mode: str,
 ) -> str:
-    """Build deterministic feature hash from configured columns.
+    """Build deterministic order-invariant feature hash.
 
     Parameters
     ----------
     feature_columns : list[str]
         Configured feature list.
-    hash_mode : str
-        Either ``order_invariant`` or ``order_sensitive``.
-
     Returns
     -------
     str
         SHA256 hash hex digest.
     """
-    if hash_mode == "order_invariant":
-        payload = sorted([str(col) for col in feature_columns])
-    elif hash_mode == "order_sensitive":
-        payload = [str(col) for col in feature_columns]
-    else:
-        raise ValueError(
-            "Unsupported hash_mode='{}'. Expected one of ['order_invariant', "
-            "'order_sensitive'].".format(hash_mode)
-        )
+    payload = sorted([str(col) for col in feature_columns])
     return hashlib.sha256(
         json.dumps(payload, separators=(",", ":"), sort_keys=False).encode(
             "utf-8"

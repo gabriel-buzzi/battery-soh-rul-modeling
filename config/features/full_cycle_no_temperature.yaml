@@ -1,0 +1,13 @@
+id: full_cycle_no_temperature
+columns:
+  - V_mean
+  - V_median
+  - V_std
+  - V_iqr
+  - V_kurtosis
+  - V_entropy
+  - I_mean
+  - I_median
+  - I_std
+  - I_iqr
+  - I_kurtosis

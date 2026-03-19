@@ -1,74 +1,6 @@
 stage: baseline_flow
 target: SOH
 
-feature_sets:
-  full_cycle:
-    id: full_cycle
-    columns:
-      - V_mean
-      - V_median
-      - V_std
-      - V_iqr
-      - V_kurtosis
-      - V_entropy
-      - I_mean
-      - I_median
-      - I_std
-      - I_iqr
-      - I_kurtosis
-      - T_mean
-      - T_median
-      - T_std
-      - T_iqr
-      - T_kurtosis
-  charge_only:
-    id: charge_only
-    columns:
-      - charge_V_mean
-      - charge_V_median
-      - charge_V_std
-      - charge_V_iqr
-      - charge_V_kurtosis
-      - charge_V_entropy
-      - charge_I_mean
-      - charge_I_median
-      - charge_I_std
-      - charge_I_iqr
-      - charge_I_kurtosis
-      - charge_T_mean
-      - charge_T_median
-      - charge_T_std
-      - charge_T_iqr
-      - charge_T_kurtosis
-  full_cycle_no_temperature:
-    id: full_cycle_no_temperature
-    columns:
-      - V_mean
-      - V_median
-      - V_std
-      - V_iqr
-      - V_kurtosis
-      - V_entropy
-      - I_mean
-      - I_median
-      - I_std
-      - I_iqr
-      - I_kurtosis
-  charge_only_no_temperature:
-    id: charge_only_no_temperature
-    columns:
-      - charge_V_mean
-      - charge_V_median
-      - charge_V_std
-      - charge_V_iqr
-      - charge_V_kurtosis
-      - charge_V_entropy
-      - charge_I_mean
-      - charge_I_median
-      - charge_I_std
-      - charge_I_iqr
-      - charge_I_kurtosis
-
 data:
   features_path: data/interim/features.parquet
   protocol_column: charge_policy
@@ -79,18 +11,11 @@ split:
   split_dir: ./results/modeling/splits
   force_recreate: false
 
-features:
-  active_set: full_16
-  id: ${feature_sets.${features.active_set}.id}
-  columns: ${feature_sets.${features.active_set}.columns}
-  hash_mode: order_invariant
-  selection_mode: base
-  topk:
-    k_values: [2, 4, 6, 8, 10, 12, 14, 16]
-    selection_rule: smallest_feasible
-    constraints:
-      tau_rmse: 0.05
-      tau_width: 0.10
+topk:
+  k_values: [2, 4, 6, 8, 10, 12, 14, 16]
+  constraints:
+    tau_rmse: 0.05 # allowed percentage increase in rmse to select feasible k value
+    tau_width: 0.10 # allowed percentage increase in CI width to select feasible k value
 
 model:
   name: extratrees
@@ -98,7 +23,7 @@ model:
 
 optimize:
   enabled: true
-  n_trials: 20
+  n_trials: 10
   n_jobs: 1 # n_jobs for parallel optimization trials
   cv_folds: 5
   save_cv_trials: true
@@ -170,6 +95,7 @@ artifacts:
   require_exact_match: true
 
 defaults:
+  - features: full_cycle
   - _self_
   - override hydra/launcher: joblib
 
@@ -185,6 +111,6 @@ hydra:
   sweeper:
     params:
       target: SOH,RUL
-      features.active_set: full_cycle,charge_only #,full_cycle_no_temperature,charge_only_no_temperature
+      features: full_cycle,charge_only #,full_cycle_no_temperature,charge_only_no_temperature
   launcher:
     n_jobs: 4 # n_jobs for parallel hydra runs

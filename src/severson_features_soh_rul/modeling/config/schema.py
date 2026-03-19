@@ -13,7 +13,6 @@ from severson_features_soh_rul.modeling.config.defaults import (
     DEFAULT_ARTIFACTS_REQUIRE_EXACT_MATCH,
     DEFAULT_CONFORMAL_ALPHA,
     DEFAULT_CONFORMAL_CALIBRATION_PROPORTION,
-    DEFAULT_FEATURE_HASH_MODE,
     DEFAULT_LONG_LIFE_BOOST_FACTOR,
     DEFAULT_LONG_LIFE_QUANTILE,
     DEFAULT_OBJECTIVE_LAMBDA_GAP,
@@ -41,8 +40,6 @@ SUPPORTED_STAGES = {
     "baseline_flow",
 }
 SUPPORTED_TARGETS = {"SOH", "RUL"}
-SUPPORTED_FEATURE_HASH_MODES = {"order_invariant", "order_sensitive"}
-SUPPORTED_FEATURE_SELECTION_MODES = {"base", "topk"}
 SUPPORTED_WEIGHTING_STRATEGIES = {
     "none",
     "sample_weight_inverse_life_density",
@@ -57,8 +54,6 @@ class FeatureConfig:
 
     columns: list[str]
     feature_set_id: str
-    hash_mode: str
-    selection_mode: str
 
 
 @dataclass(frozen=True)
@@ -147,7 +142,6 @@ class TopKConfig:
     """Top-k search configuration."""
 
     k_values: list[int]
-    selection_rule: str
     tau_rmse: float
     tau_width: float
 
@@ -182,23 +176,6 @@ def parse_feature_config(cfg: DictConfig) -> FeatureConfig:
     if not columns:
         raise ValueError("features.columns must be a non-empty list.")
 
-    hash_mode = str(cfg.features.get("hash_mode", DEFAULT_FEATURE_HASH_MODE))
-    if hash_mode not in SUPPORTED_FEATURE_HASH_MODES:
-        raise ValueError(
-            "Unsupported features.hash_mode='{}'. Supported: {}".format(
-                hash_mode, sorted(SUPPORTED_FEATURE_HASH_MODES)
-            )
-        )
-
-    selection_mode = str(cfg.features.get("selection_mode", "base"))
-    if selection_mode not in SUPPORTED_FEATURE_SELECTION_MODES:
-        raise ValueError(
-            "Unsupported features.selection_mode='{}'. Supported: {}".format(
-                selection_mode,
-                sorted(SUPPORTED_FEATURE_SELECTION_MODES),
-            )
-        )
-
     feature_set_id = str(cfg.features.get("id") or "")
     if not feature_set_id:
         feature_set_id = "feature_hash"
@@ -206,8 +183,6 @@ def parse_feature_config(cfg: DictConfig) -> FeatureConfig:
     return FeatureConfig(
         columns=columns,
         feature_set_id=feature_set_id,
-        hash_mode=hash_mode,
-        selection_mode=selection_mode,
     )
 
 
@@ -301,13 +276,10 @@ def parse_ranking_config(cfg: DictConfig) -> RankingConfig:
 
 def parse_topk_config(cfg: DictConfig) -> TopKConfig:
     """Parse top-k selection configuration."""
-    topk_cfg = cfg.features.get("topk", {})
+    topk_cfg = cfg.get("topk", {})
     constraints_cfg = topk_cfg.get("constraints", {})
     return TopKConfig(
         k_values=[int(k) for k in topk_cfg.get("k_values", [])],
-        selection_rule=str(
-            topk_cfg.get("selection_rule", "smallest_feasible")
-        ),
         tau_rmse=float(constraints_cfg.get("tau_rmse", DEFAULT_TOPK_TAU_RMSE)),
         tau_width=float(
             constraints_cfg.get("tau_width", DEFAULT_TOPK_TAU_WIDTH)

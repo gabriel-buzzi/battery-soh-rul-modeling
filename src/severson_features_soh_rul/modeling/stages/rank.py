@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import numpy as np
@@ -22,10 +23,12 @@ from severson_features_soh_rul.modeling.stages.common import (
     prepare_runtime_context,
 )
 
+LOGGER = logging.getLogger(__name__)
+
 
 def run_stage(cfg: Any) -> dict[str, Any]:
     """Execute rank stage from permutation prediction artifacts."""
-    print("[rank] running")
+    LOGGER.info("[rank] running")
     context = prepare_runtime_context(cfg=cfg, stage="rank")
     stage_dir, skipped = prepare_stage_dir(
         root_dir=context.artifacts_cfg.root_dir,

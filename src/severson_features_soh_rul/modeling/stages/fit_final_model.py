@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import Any
 
 from severson_features_soh_rul.modeling.artifacts.resolver import (
@@ -27,49 +28,21 @@ from severson_features_soh_rul.modeling.stages.common import (
     prepare_runtime_context,
 )
 
+LOGGER = logging.getLogger(__name__)
+
 
 def run_stage(cfg: Any) -> dict[str, Any]:
     """Execute fit_final_model stage."""
-    print("[fit_final_model] running")
-    base_context = prepare_runtime_context(
-        cfg=cfg,
-        stage="fit_final_model",
-    )
-
-    selected_features = base_context.feature_cfg.columns
+    LOGGER.info("[fit_final_model] running")
     selected_k: int | None = None
     topk_stage_dir: str | None = None
-
-    if base_context.feature_cfg.selection_mode == "topk":
-        topk_dir = resolve_unique_stage_dir(
-            artifacts_root=base_context.artifacts_cfg.root_dir,
-            stage="topk_sweep",
-            match_fields={
-                "target": base_context.target,
-                "feature_hash": base_context.feature_hash,
-                "split_seed": base_context.split_cfg.seed,
-                "model_name": base_context.model_cfg.name,
-                "weighting_strategy": base_context.weighting_cfg.strategy,
-            },
-            require_exact_match=base_context.artifacts_cfg.require_exact_match,
-        )
-        topk_selection_path = resolve_required_file(
-            stage_dir=topk_dir,
-            file_name="topk_selection.json",
-            stage="topk_sweep",
-        )
-        topk_payload = json.loads(topk_selection_path.read_text())
-        selected_features = [
-            str(value) for value in topk_payload["selected_features"]
-        ]
-        selected_k = int(topk_payload["selected_k"])
-        topk_stage_dir = str(topk_dir)
 
     context = prepare_runtime_context(
         cfg=cfg,
         stage="fit_final_model",
         k_selected=selected_k,
     )
+    selected_features = context.feature_cfg.columns
     stage_dir, skipped = prepare_stage_dir(
         root_dir=context.artifacts_cfg.root_dir,
         run_key=context.run_key,
@@ -155,7 +128,7 @@ def run_stage(cfg: Any) -> dict[str, Any]:
         output_path=stage_dir / "selected_features.json",
         payload={
             "selected_features": selected_features,
-            "selection_mode": context.feature_cfg.selection_mode,
+            "selection_mode": "base",
             "selected_k": selected_k,
         },
     )

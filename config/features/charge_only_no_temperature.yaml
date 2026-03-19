@@ -1,0 +1,13 @@
+id: charge_only_no_temperature
+columns:
+  - charge_V_mean
+  - charge_V_median
+  - charge_V_std
+  - charge_V_iqr
+  - charge_V_kurtosis
+  - charge_V_entropy
+  - charge_I_mean
+  - charge_I_median
+  - charge_I_std
+  - charge_I_iqr
+  - charge_I_kurtosis

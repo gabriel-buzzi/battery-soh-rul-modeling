@@ -1,0 +1,18 @@
+id: charge_only
+columns:
+  - charge_V_mean
+  - charge_V_median
+  - charge_V_std
+  - charge_V_iqr
+  - charge_V_kurtosis
+  - charge_V_entropy
+  - charge_I_mean
+  - charge_I_median
+  - charge_I_std
+  - charge_I_iqr
+  - charge_I_kurtosis
+  - charge_T_mean
+  - charge_T_median
+  - charge_T_std
+  - charge_T_iqr
+  - charge_T_kurtosis

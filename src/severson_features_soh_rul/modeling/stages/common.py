@@ -127,7 +127,6 @@ def prepare_runtime_context(
 
     feature_hash = build_feature_hash(
         feature_columns=feature_cfg.columns,
-        hash_mode=feature_cfg.hash_mode,
     )
     feature_set_id = feature_set_id_from_config(
         feature_id=feature_cfg.feature_set_id,

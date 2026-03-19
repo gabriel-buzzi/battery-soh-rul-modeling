@@ -40,13 +40,10 @@ def _build_cfg(tmp_path: Path, features_path: Path, root_name: str) -> object:
             "features": {
                 "id": "small_set",
                 "columns": ["V_mean", "I_mean"],
-                "hash_mode": "order_invariant",
-                "selection_mode": "base",
-                "topk": {
-                    "k_values": [1, 2],
-                    "selection_rule": "smallest_feasible",
-                    "constraints": {"tau_rmse": 0.05, "tau_width": 0.1},
-                },
+            },
+            "topk": {
+                "k_values": [1, 2],
+                "constraints": {"tau_rmse": 0.05, "tau_width": 0.1},
             },
             "model": {"name": "extratrees", "n_jobs": 1},
             "optimize": {

@@ -1,0 +1,18 @@
+id: full_cycle
+columns:
+  - V_mean
+  - V_median
+  - V_std
+  - V_iqr
+  - V_kurtosis
+  - V_entropy
+  - I_mean
+  - I_median
+  - I_std
+  - I_iqr
+  - I_kurtosis
+  - T_mean
+  - T_median
+  - T_std
+  - T_iqr
+  - T_kurtosis

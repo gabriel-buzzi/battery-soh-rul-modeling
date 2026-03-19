@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from typing import Any
 
 import numpy as np
@@ -33,10 +34,12 @@ from severson_features_soh_rul.modeling.stages.common import (
     prepare_runtime_context,
 )
 
+LOGGER = logging.getLogger(__name__)
+
 
 def run_stage(cfg: Any) -> dict[str, Any]:
     """Execute permutation_importance stage."""
-    print("[permutation_importance] running")
+    LOGGER.info("[permutation_importance] running")
     context = prepare_runtime_context(cfg=cfg, stage="permutation_importance")
     stage_dir, skipped = prepare_stage_dir(
         root_dir=context.artifacts_cfg.root_dir,

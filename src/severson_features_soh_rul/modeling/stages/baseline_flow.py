@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from severson_features_soh_rul.modeling.stages.fit_final_model import (
@@ -14,10 +15,12 @@ from severson_features_soh_rul.modeling.stages.predict import (
     run_stage as run_predict,
 )
 
+LOGGER = logging.getLogger(__name__)
+
 
 def run_stage(cfg: Any) -> dict[str, Any]:
     """Run optimize -> fit_final_model -> predict."""
-    print("[baseline_flow] running")
+    LOGGER.info("[baseline_flow] running")
     optimize_result = run_optimize(cfg)
     fit_result = run_fit_final_model(cfg)
     predict_result = run_predict(cfg)

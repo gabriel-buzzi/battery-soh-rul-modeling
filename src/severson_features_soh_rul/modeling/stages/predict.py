@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import json
+import logging
 from typing import Any
 
 import joblib
@@ -25,34 +25,13 @@ from severson_features_soh_rul.modeling.stages.common import (
     prepare_runtime_context,
 )
 
+LOGGER = logging.getLogger(__name__)
+
 
 def run_stage(cfg: Any) -> dict[str, Any]:
     """Execute predict stage."""
-    print("[predict] running")
-    base_context = prepare_runtime_context(cfg=cfg, stage="predict")
-
+    LOGGER.info("[predict] running")
     selected_k: int | None = None
-    if base_context.feature_cfg.selection_mode == "topk":
-        topk_stage_dir = resolve_unique_stage_dir(
-            artifacts_root=base_context.artifacts_cfg.root_dir,
-            stage="topk_sweep",
-            match_fields={
-                "target": base_context.target,
-                "feature_hash": base_context.feature_hash,
-                "split_seed": base_context.split_cfg.seed,
-                "model_name": base_context.model_cfg.name,
-                "weighting_strategy": base_context.weighting_cfg.strategy,
-            },
-            require_exact_match=base_context.artifacts_cfg.require_exact_match,
-        )
-        topk_selection = json.loads(
-            resolve_required_file(
-                stage_dir=topk_stage_dir,
-                file_name="topk_selection.json",
-                stage="topk_sweep",
-            ).read_text()
-        )
-        selected_k = int(topk_selection["selected_k"])
 
     context = prepare_runtime_context(
         cfg=cfg,
