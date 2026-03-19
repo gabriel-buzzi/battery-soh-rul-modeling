@@ -245,7 +245,9 @@ def _process_cells_data(cfg: DictConfig, cells_data: h5py.File) -> None:
             )
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config")
+@hydra.main(
+    version_base=None, config_path="../../../config", config_name="config"
+)
 def build_data(cfg: DictConfig) -> None:
     """Load raw data, filter invalide cycles, interpolate signals and save.
 

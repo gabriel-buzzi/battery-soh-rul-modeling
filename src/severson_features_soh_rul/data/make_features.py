@@ -105,7 +105,9 @@ def _extract_cycle_features(
     }
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config")
+@hydra.main(
+    version_base=None, config_path="../../../config", config_name="config"
+)
 def make_features(cfg: DictConfig) -> None:
     """Compute full-cycle/charge-step features and RUL targets."""
     cells_data_folder = Path(cfg["data"]["processed_cells_data_folder"])

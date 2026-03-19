@@ -12,7 +12,9 @@ from sklearn.model_selection import train_test_split
 logger = logging.getLogger(__name__)
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config")
+@hydra.main(
+    version_base=None, config_path="../../../config", config_name="config"
+)
 def prepare_data(cfg: DictConfig) -> None:
     """Prepare train and test data."""
     features_data_path = Path(cfg["data"]["features_data_path"])
