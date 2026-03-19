@@ -21,7 +21,7 @@ from severson_features_soh_rul.modeling.config.defaults import (
     DEFAULT_PROTOCOL_COLUMN,
     DEFAULT_RANKING_CLIP_HIGH_Q,
     DEFAULT_RANKING_CLIP_LOW_Q,
-    DEFAULT_RANKING_N_REPEATS,
+    DEFAULT_RANKING_N_PERMUTATIONS,
     DEFAULT_RANKING_WEIGHT_RMSE,
     DEFAULT_RANKING_WEIGHT_UNCERTAINTY,
     DEFAULT_SAMPLE_WEIGHT_N_BINS,
@@ -32,6 +32,7 @@ from severson_features_soh_rul.modeling.config.defaults import (
 
 SUPPORTED_STAGES = {
     "optimize",
+    "permutation_importance",
     "rank",
     "topk_sweep",
     "fit_final_model",
@@ -104,7 +105,7 @@ class ConformalConfig:
 class RankingConfig:
     """Ranking configuration."""
 
-    n_repeats: int
+    n_permutations: int
     w_rmse: float
     w_uncertainty: float
     clip_low_q: float
@@ -269,8 +270,17 @@ def parse_ranking_config(cfg: DictConfig) -> RankingConfig:
     """Parse ranking configuration."""
     weights_cfg = cfg.ranking.get("weights", {})
     rescale_cfg = cfg.ranking.get("rescale", {})
+    n_permutations = cfg.ranking.get("n_permutations", None)
+    if n_permutations is None:
+        n_permutations = cfg.ranking.get(
+            "n_repeats",
+            DEFAULT_RANKING_N_PERMUTATIONS,
+        )
+    n_permutations = int(n_permutations)
+    if n_permutations <= 0:
+        raise ValueError("ranking.n_permutations must be > 0.")
     return RankingConfig(
-        n_repeats=int(cfg.ranking.get("n_repeats", DEFAULT_RANKING_N_REPEATS)),
+        n_permutations=n_permutations,
         w_rmse=float(weights_cfg.get("rmse", DEFAULT_RANKING_WEIGHT_RMSE)),
         w_uncertainty=float(
             weights_cfg.get("uncertainty", DEFAULT_RANKING_WEIGHT_UNCERTAINTY)

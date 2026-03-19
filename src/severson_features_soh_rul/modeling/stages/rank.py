@@ -1,14 +1,11 @@
-"""Permutation ranking stage with conformal uncertainty outputs."""
+"""Ranking stage that consumes saved permutation prediction artifacts."""
 
 from __future__ import annotations
 
-import hashlib
-import json
 from typing import Any
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import GroupKFold
 
 from severson_features_soh_rul.modeling.artifacts.resolver import (
     resolve_required_file,
@@ -20,30 +17,20 @@ from severson_features_soh_rul.modeling.artifacts.writer import (
     write_resolved_config,
     write_run_info,
 )
-from severson_features_soh_rul.modeling.core.conformal import (
-    fit_conformal_model,
-    predict_with_intervals,
-)
-from severson_features_soh_rul.modeling.core.models import build_model
-from severson_features_soh_rul.modeling.core.weighting import (
-    build_sample_weights,
-)
 from severson_features_soh_rul.modeling.metrics.regression import rmse
 from severson_features_soh_rul.modeling.stages.common import (
-    build_prediction_dataframe,
     prepare_runtime_context,
 )
 
 
 def run_stage(cfg: Any) -> dict[str, Any]:
-    """Execute rank stage."""
+    """Execute rank stage from permutation prediction artifacts."""
     context = prepare_runtime_context(cfg=cfg, stage="rank")
     stage_dir, skipped = prepare_stage_dir(
         root_dir=context.artifacts_cfg.root_dir,
         run_key=context.run_key,
         stage="rank",
         required_files=[
-            "predictions_rank_val.csv",
             "ranking_permutation_rmse.csv",
             "ranking_permutation_interval_width.csv",
             "ranking_composite.csv",
@@ -61,9 +48,9 @@ def run_stage(cfg: Any) -> dict[str, Any]:
             "run_key": context.run_key,
         }
 
-    optimize_stage_dir = resolve_unique_stage_dir(
+    permutation_stage_dir = resolve_unique_stage_dir(
         artifacts_root=context.artifacts_cfg.root_dir,
-        stage="optimize",
+        stage="permutation_importance",
         match_fields={
             "target": context.target,
             "feature_hash": context.feature_hash,
@@ -73,133 +60,60 @@ def run_stage(cfg: Any) -> dict[str, Any]:
         },
         require_exact_match=context.artifacts_cfg.require_exact_match,
     )
-    best_params_path = resolve_required_file(
-        stage_dir=optimize_stage_dir,
-        file_name="best_params.json",
-        stage="optimize",
+    predictions_path = resolve_required_file(
+        stage_dir=permutation_stage_dir,
+        file_name="predictions_permutation_importance.csv",
+        stage="permutation_importance",
     )
-    best_params = json.loads(best_params_path.read_text())
+    predictions_df = pd.read_csv(predictions_path)
+    _validate_predictions_contract(predictions_df=predictions_df)
 
-    X_train = context.train_df[context.feature_cfg.columns]
-    y_train = context.train_df[context.target]
-    groups_train = context.train_df["cell"].astype(str)
-
-    gkf = GroupKFold(n_splits=context.optimize_cfg.cv_folds)
-    prediction_rows: list[pd.DataFrame] = []
-    permutation_rows: list[dict[str, Any]] = []
-
-    for repeat_idx in range(context.ranking_cfg.n_repeats):
-        repeat_seed = context.model_cfg.random_seed + repeat_idx
-        for fold_id, (train_idx, val_idx) in enumerate(
-            gkf.split(X=X_train, y=y_train, groups=groups_train),
-            start=1,
-        ):
-            X_tr = X_train.iloc[train_idx]
-            X_val = X_train.iloc[val_idx]
-            y_tr = y_train.iloc[train_idx]
-            y_val = y_train.iloc[val_idx]
-            groups_tr = groups_train.iloc[train_idx]
-
-            fold_weights = build_sample_weights(
-                y_train=y_tr,
-                weighting_cfg=context.weighting_cfg,
-                reference_series=context.train_df.iloc[train_idx]["RUL"],
-            )
-
-            base_model = build_model(
-                model_name=context.model_cfg.name,
-                model_params=best_params,
-                random_seed=repeat_seed,
-                n_jobs=context.model_cfg.n_jobs,
-            )
-            model_bundle = fit_conformal_model(
-                base_model=base_model,
-                X_train=X_tr,
-                y_train=y_tr,
-                groups_train=groups_tr,
-                conformal_enabled=context.conformal_cfg.enabled,
-                alpha=context.conformal_cfg.alpha,
-                calibration_proportion=context.conformal_cfg.calibration_proportion,
-                random_seed=repeat_seed,
-                sample_weight=fold_weights,
-            )
-            y_val_pred, y_val_lo, y_val_hi = predict_with_intervals(
-                model_bundle=model_bundle,
-                X=X_val,
-            )
-
-            val_predictions = build_prediction_dataframe(
-                base_df=context.train_df.iloc[val_idx],
-                y_true=y_val,
-                y_pred=y_val_pred,
-                y_pred_lo=y_val_lo,
-                y_pred_hi=y_val_hi,
-                target=context.target,
-                feature_set_id=context.feature_set_id,
-                feature_hash=context.feature_hash,
-                split_seed=context.split_cfg.seed,
-                stage="rank_val",
-            )
-            val_predictions["repeat"] = repeat_idx
-            val_predictions["fold"] = fold_id
-            prediction_rows.append(val_predictions)
-
-            baseline_rmse = rmse(y_true=y_val, y_pred=y_val_pred)
-            baseline_width = float(np.nanmean(y_val_hi - y_val_lo))
-
-            for feature in context.feature_cfg.columns:
-                X_val_perm = X_val.copy()
-                feature_seed = int(
-                    hashlib.sha256(feature.encode("utf-8")).hexdigest()[:8],
-                    16,
+    group_cols = ["feature", "fold", "permutation"]
+    metrics_rows = [
+        {
+            "feature": str(feature),
+            "fold": int(fold),
+            "permutation": int(permutation),
+            "rmse_shuffled": rmse(
+                y_true=chunk["y_true"], y_pred=chunk["y_pred"]
+            ),
+            "interval_width_shuffled": float(
+                np.nanmean(
+                    chunk["y_pred_hi"].to_numpy()
+                    - chunk["y_pred_lo"].to_numpy()
                 )
-                seed = repeat_seed * 1000 + fold_id * 100 + feature_seed % 97
-                rng = np.random.default_rng(seed)
-                X_val_perm.loc[:, feature] = rng.permutation(
-                    X_val_perm[feature].to_numpy()
-                )
+            ),
+        }
+        for (feature, fold, permutation), chunk in predictions_df.groupby(
+            group_cols, sort=False
+        )
+    ]
+    metrics_df = pd.DataFrame(metrics_rows)
 
-                y_perm_pred, y_perm_lo, y_perm_hi = predict_with_intervals(
-                    model_bundle=model_bundle,
-                    X=X_val_perm,
-                )
-                shuffled_rmse = rmse(y_true=y_val, y_pred=y_perm_pred)
-                shuffled_width = float(np.nanmean(y_perm_hi - y_perm_lo))
-
-                permutation_rows.append(
-                    {
-                        "repeat": repeat_idx,
-                        "fold": fold_id,
-                        "feature": feature,
-                        "baseline_rmse": baseline_rmse,
-                        "shuffled_rmse": shuffled_rmse,
-                        "rmse_increase": shuffled_rmse - baseline_rmse,
-                        "baseline_interval_width": baseline_width,
-                        "shuffled_interval_width": shuffled_width,
-                        "interval_width_increase": shuffled_width
-                        - baseline_width,
-                    }
-                )
-
-    prediction_df = pd.concat(prediction_rows, ignore_index=True)
-    permutation_df = pd.DataFrame(permutation_rows)
-
-    permutation_rmse_df = (
-        permutation_df.groupby("feature", as_index=False)
+    fold_feature_agg_df = (
+        metrics_df.groupby(["feature", "fold"], as_index=False)
         .agg(
-            impact_rmse_mean=("rmse_increase", "mean"),
-            impact_rmse_std=("rmse_increase", "std"),
+            rmse_fold_mean=("rmse_shuffled", "mean"),
+            interval_width_fold_mean=("interval_width_shuffled", "mean"),
+        )
+        .sort_values(["feature", "fold"])
+        .reset_index(drop=True)
+    )
+    permutation_rmse_df = (
+        fold_feature_agg_df.groupby("feature", as_index=False)
+        .agg(
+            impact_rmse_mean=("rmse_fold_mean", "mean"),
+            impact_rmse_std=("rmse_fold_mean", "std"),
         )
         .fillna(0.0)
         .sort_values("impact_rmse_mean", ascending=False)
         .reset_index(drop=True)
     )
-
     permutation_width_df = (
-        permutation_df.groupby("feature", as_index=False)
+        fold_feature_agg_df.groupby("feature", as_index=False)
         .agg(
-            impact_uncertainty_mean=("interval_width_increase", "mean"),
-            impact_uncertainty_std=("interval_width_increase", "std"),
+            impact_uncertainty_mean=("interval_width_fold_mean", "mean"),
+            impact_uncertainty_std=("interval_width_fold_mean", "std"),
         )
         .fillna(0.0)
         .sort_values("impact_uncertainty_mean", ascending=False)
@@ -233,13 +147,38 @@ def run_stage(cfg: Any) -> dict[str, Any]:
         np.arange(ranking_composite_df.shape[0]) + 1
     )
 
-    ranking_stability_df = (
-        permutation_df.groupby("feature", as_index=False)
+    fold_permutation_dispersion_df = (
+        metrics_df.groupby(["feature", "fold"], as_index=False)
         .agg(
-            impact_rmse_mean=("rmse_increase", "mean"),
-            impact_rmse_std=("rmse_increase", "std"),
-            impact_uncertainty_mean=("interval_width_increase", "mean"),
-            impact_uncertainty_std=("interval_width_increase", "std"),
+            impact_rmse_perm_std=("rmse_shuffled", "std"),
+            impact_uncertainty_perm_std=("interval_width_shuffled", "std"),
+            n_permutations=("permutation", "nunique"),
+        )
+        .fillna(0.0)
+    )
+    ranking_stability_df = (
+        fold_feature_agg_df.merge(
+            fold_permutation_dispersion_df,
+            on=["feature", "fold"],
+            how="inner",
+            validate="one_to_one",
+        )
+        .groupby("feature", as_index=False)
+        .agg(
+            impact_rmse_mean=("rmse_fold_mean", "mean"),
+            impact_rmse_std_across_folds=("rmse_fold_mean", "std"),
+            impact_rmse_perm_std_mean=("impact_rmse_perm_std", "mean"),
+            impact_uncertainty_mean=("interval_width_fold_mean", "mean"),
+            impact_uncertainty_std_across_folds=(
+                "interval_width_fold_mean",
+                "std",
+            ),
+            impact_uncertainty_perm_std_mean=(
+                "impact_uncertainty_perm_std",
+                "mean",
+            ),
+            n_folds=("fold", "nunique"),
+            n_permutations=("n_permutations", "max"),
         )
         .fillna(0.0)
         .sort_values("impact_rmse_mean", ascending=False)
@@ -253,12 +192,10 @@ def run_stage(cfg: Any) -> dict[str, Any]:
         context={
             **context.stage_context,
             "run_key_components": context.run_key_components,
-            "n_repeats": context.ranking_cfg.n_repeats,
-            "optimize_stage_dir": str(optimize_stage_dir),
+            "heuristic_rule": "weighted_quantile_clipped_minmax",
+            "n_permutations": context.ranking_cfg.n_permutations,
+            "permutation_importance_stage_dir": str(permutation_stage_dir),
         },
-    )
-    write_csv_atomic(
-        output_path=stage_dir / "predictions_rank_val.csv", df=prediction_df
     )
     write_csv_atomic(
         output_path=stage_dir / "ranking_permutation_rmse.csv",
@@ -283,6 +220,29 @@ def run_stage(cfg: Any) -> dict[str, Any]:
         "stage_dir": str(stage_dir),
         "run_key": context.run_key,
     }
+
+
+def _validate_predictions_contract(predictions_df: pd.DataFrame) -> None:
+    """Validate required columns for permutation predictions contract."""
+    required_cols = {
+        "fold",
+        "feature",
+        "permutation",
+        "y_true",
+        "y_pred",
+        "y_pred_lo",
+        "y_pred_hi",
+    }
+    missing = sorted(required_cols - set(predictions_df.columns))
+    if missing:
+        raise ValueError(
+            "Permutation predictions artifact missing required columns: "
+            + ", ".join(missing)
+        )
+    if predictions_df.empty:
+        raise ValueError(
+            "Permutation predictions artifact is empty; cannot build ranking."
+        )
 
 
 def _quantile_clipped_minmax(

@@ -17,6 +17,9 @@ from severson_features_soh_rul.modeling.stages.fit_final_model import (
 from severson_features_soh_rul.modeling.stages.optimize import (
     run_stage as run_optimize,
 )
+from severson_features_soh_rul.modeling.stages.permutation_importance import (
+    run_stage as run_permutation_importance,
+)
 from severson_features_soh_rul.modeling.stages.predict import (
     run_stage as run_predict,
 )
@@ -40,6 +43,8 @@ def run_pipeline(cfg: DictConfig) -> None:
 
     if stage == "optimize":
         result = run_optimize(cfg)
+    elif stage == "permutation_importance":
+        result = run_permutation_importance(cfg)
     elif stage == "rank":
         result = run_rank(cfg)
     elif stage == "topk_sweep":
@@ -58,6 +63,7 @@ def run_pipeline(cfg: DictConfig) -> None:
                 stage,
                 [
                     "optimize",
+                    "permutation_importance",
                     "rank",
                     "topk_sweep",
                     "fit_final_model",

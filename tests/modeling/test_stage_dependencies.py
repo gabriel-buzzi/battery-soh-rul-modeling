@@ -78,7 +78,7 @@ def _build_cfg(tmp_path: Path, features_path: Path) -> object:
                 "calibration_proportion": 0.2,
             },
             "ranking": {
-                "n_repeats": 1,
+                "n_permutations": 2,
                 "weights": {"rmse": 0.7, "uncertainty": 0.3},
                 "rescale": {"clip_low_q": 0.05, "clip_high_q": 0.95},
             },

@@ -121,12 +121,17 @@ python -m severson_features_soh_rul.modeling.pipeline \
 
 ```bash
 python -m severson_features_soh_rul.modeling.pipeline stage=optimize target=SOH
+python -m severson_features_soh_rul.modeling.pipeline stage=permutation_importance target=SOH
 python -m severson_features_soh_rul.modeling.pipeline stage=rank target=SOH
 python -m severson_features_soh_rul.modeling.pipeline stage=topk_sweep target=SOH
 python -m severson_features_soh_rul.modeling.pipeline stage=fit_final_model target=SOH
 python -m severson_features_soh_rul.modeling.pipeline stage=predict target=SOH
 python -m severson_features_soh_rul.modeling.pipeline stage=robustness_protocol_lopo target=SOH
 ```
+
+For feature ranking, run:
+- `stage=permutation_importance` first (saves shuffled predictions only)
+- `stage=rank` second (builds rankings from saved permutation predictions)
 
 #### 3.3 Artifact Layout and Guarantees
 

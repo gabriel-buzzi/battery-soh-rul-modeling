@@ -6,6 +6,7 @@ import json
 from typing import Any
 
 import numpy as np
+from omegaconf import OmegaConf
 import pandas as pd
 from sklearn.model_selection import GroupKFold
 
@@ -29,6 +30,9 @@ from severson_features_soh_rul.modeling.core.weighting import (
     build_sample_weights,
 )
 from severson_features_soh_rul.modeling.metrics.regression import rmse
+from severson_features_soh_rul.modeling.stages.rank import (
+    run_stage as run_rank,
+)
 from severson_features_soh_rul.modeling.stages.common import (
     prepare_runtime_context,
 )
@@ -36,8 +40,13 @@ from severson_features_soh_rul.modeling.stages.common import (
 
 def run_stage(cfg: Any) -> dict[str, Any]:
     """Execute top-k sweep stage."""
+    rank_cfg = OmegaConf.create(OmegaConf.to_container(cfg, resolve=False))
+    rank_cfg.stage = "rank"
+    rank_cfg.artifacts.overwrite = True
+    rank_result = run_rank(rank_cfg)
+
     context = prepare_runtime_context(cfg=cfg, stage="topk_sweep")
-    stage_dir, skipped = prepare_stage_dir(
+    stage_dir, _ = prepare_stage_dir(
         root_dir=context.artifacts_cfg.root_dir,
         run_key=context.run_key,
         stage="topk_sweep",
@@ -47,15 +56,8 @@ def run_stage(cfg: Any) -> dict[str, Any]:
             "config.resolved.yaml",
             "run_info.json",
         ],
-        overwrite=context.artifacts_cfg.overwrite,
+        overwrite=True,
     )
-    if skipped:
-        return {
-            "stage": "topk_sweep",
-            "status": "skipped",
-            "stage_dir": str(stage_dir),
-            "run_key": context.run_key,
-        }
 
     optimize_stage_dir = resolve_unique_stage_dir(
         artifacts_root=context.artifacts_cfg.root_dir,
@@ -114,7 +116,7 @@ def run_stage(cfg: Any) -> dict[str, Any]:
     groups_train = context.train_df["cell"].astype(str)
 
     sweep_rows: list[dict[str, Any]] = []
-    full_row: dict[str, Any] | None = None
+    all_features: dict[str, Any] | None = None
 
     for k in k_values:
         selected_features = ranked_features[:k]
@@ -134,18 +136,18 @@ def run_stage(cfg: Any) -> dict[str, Any]:
         }
         sweep_rows.append(row)
         if k == total_features:
-            full_row = row
+            all_features = row
 
-    if full_row is None:
+    if all_features is None:
         raise RuntimeError(
-            "Full-feature baseline row was not computed in topk_sweep."
+            "All features baseline row was not computed in topk_sweep."
         )
 
     sweep_df = pd.DataFrame(sweep_rows).sort_values("k").reset_index(drop=True)
-    rmse_threshold = float(full_row["rmse_mean"]) * (
+    rmse_threshold = float(all_features["rmse_mean"]) * (
         1.0 + context.topk_cfg.tau_rmse
     )
-    width_threshold = float(full_row["interval_width_mean"]) * (
+    width_threshold = float(all_features["interval_width_mean"]) * (
         1.0 + context.topk_cfg.tau_width
     )
     sweep_df["is_feasible"] = (sweep_df["rmse_mean"] <= rmse_threshold) & (
@@ -162,8 +164,10 @@ def run_stage(cfg: Any) -> dict[str, Any]:
         "selection_mode": selection_mode,
         "tau_rmse": context.topk_cfg.tau_rmse,
         "tau_width": context.topk_cfg.tau_width,
-        "full_rmse_mean": float(full_row["rmse_mean"]),
-        "full_interval_width_mean": float(full_row["interval_width_mean"]),
+        "all_features_rmse_mean": float(all_features["rmse_mean"]),
+        "all_features_interval_width_mean": float(
+            all_features["interval_width_mean"]
+        ),
         "rmse_threshold": rmse_threshold,
         "width_threshold": width_threshold,
     }
@@ -177,6 +181,7 @@ def run_stage(cfg: Any) -> dict[str, Any]:
             "run_key_components": context.run_key_components,
             "optimize_stage_dir": str(optimize_stage_dir),
             "rank_stage_dir": str(rank_stage_dir),
+            "rank_refresh_status": rank_result.get("status"),
         },
     )
     write_csv_atomic(output_path=stage_dir / "topk_sweep_cv.csv", df=sweep_df)
@@ -191,6 +196,7 @@ def run_stage(cfg: Any) -> dict[str, Any]:
         "stage_dir": str(stage_dir),
         "run_key": context.run_key,
         "selected_k": selected_k,
+        "rank": rank_result,
     }
 
 

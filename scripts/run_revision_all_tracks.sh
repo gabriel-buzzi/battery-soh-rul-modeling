@@ -25,6 +25,7 @@ for target in "${TARGETS[@]}"; do
   run_stage optimize "$target"
   run_stage fit_final_model "$target"
   run_stage predict "$target"
+  run_stage permutation_importance "$target"
   run_stage rank "$target"
   run_stage topk_sweep "$target"
   run_stage robustness_protocol_lopo "$target"

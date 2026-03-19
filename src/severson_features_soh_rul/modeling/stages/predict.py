@@ -131,8 +131,7 @@ def run_stage(cfg: Any) -> dict[str, Any]:
         y_pred_lo=y_lo,
         y_pred_hi=y_hi,
         target=context.target,
-        feature_set_id=context.feature_set_id,
-        feature_hash=context.feature_hash,
+        feature_columns=selected_features,
         split_seed=context.split_cfg.seed,
         stage=("test" if prediction_split == "test" else prediction_split),
     )

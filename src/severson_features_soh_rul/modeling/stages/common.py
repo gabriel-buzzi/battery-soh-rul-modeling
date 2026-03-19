@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from pathlib import Path
 from typing import Any
 
@@ -201,20 +202,20 @@ def build_prediction_dataframe(
     y_pred_lo: Any,
     y_pred_hi: Any,
     target: str,
-    feature_set_id: str,
-    feature_hash: str,
+    feature_columns: list[str],
     split_seed: int,
     stage: str,
     held_out_protocol: str | None = None,
 ) -> pd.DataFrame:
     """Build standard prediction artifact schema."""
+    features_payload = json.dumps([str(col) for col in feature_columns])
     prediction_df = pd.DataFrame(
         {
             "cell": base_df["cell"].astype(str).to_numpy(),
             "cycle": base_df["cycle"].to_numpy(),
             "target": target,
-            "feature_set_id": feature_set_id,
-            "feature_hash": feature_hash,
+            "features_used": features_payload,
+            "n_features": int(len(feature_columns)),
             "split_seed": int(split_seed),
             "y_true": pd.Series(y_true).to_numpy(),
             "y_pred": pd.Series(y_pred).to_numpy(),
