@@ -30,11 +30,11 @@ from severson_features_soh_rul.modeling.core.weighting import (
     build_sample_weights,
 )
 from severson_features_soh_rul.modeling.metrics.regression import rmse
-from severson_features_soh_rul.modeling.stages.rank import (
-    run_stage as run_rank,
-)
 from severson_features_soh_rul.modeling.stages.common import (
     prepare_runtime_context,
+)
+from severson_features_soh_rul.modeling.stages.rank import (
+    run_stage as run_rank,
 )
 
 

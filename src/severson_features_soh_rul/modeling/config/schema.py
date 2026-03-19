@@ -17,6 +17,7 @@ from severson_features_soh_rul.modeling.config.defaults import (
     DEFAULT_LONG_LIFE_BOOST_FACTOR,
     DEFAULT_LONG_LIFE_QUANTILE,
     DEFAULT_OBJECTIVE_LAMBDA_GAP,
+    DEFAULT_OPTIMIZE_N_JOBS,
     DEFAULT_OBJECTIVE_TAU_GAP,
     DEFAULT_PROTOCOL_COLUMN,
     DEFAULT_RANKING_CLIP_HIGH_Q,
@@ -86,6 +87,7 @@ class OptimizeConfig:
 
     enabled: bool
     n_trials: int
+    n_jobs: int
     cv_folds: int
     tau_gap: float
     lambda_gap: float
@@ -240,9 +242,15 @@ def parse_model_config(cfg: DictConfig) -> ModelConfig:
 def parse_optimize_config(cfg: DictConfig) -> OptimizeConfig:
     """Parse optimization configuration."""
     objective_cfg = cfg.optimize.get("objective", {})
+    n_jobs = int(cfg.optimize.get("n_jobs", DEFAULT_OPTIMIZE_N_JOBS))
+    if n_jobs == 0 or n_jobs < -1:
+        raise ValueError(
+            "optimize.n_jobs must be -1 or a positive integer."
+        )
     return OptimizeConfig(
         enabled=bool(cfg.optimize.get("enabled", True)),
         n_trials=int(cfg.optimize.n_trials),
+        n_jobs=n_jobs,
         cv_folds=int(cfg.optimize.cv_folds),
         tau_gap=float(objective_cfg.get("tau_gap", DEFAULT_OBJECTIVE_TAU_GAP)),
         lambda_gap=float(

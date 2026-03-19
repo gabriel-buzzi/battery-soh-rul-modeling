@@ -150,7 +150,7 @@ def run_stage(cfg: Any) -> dict[str, Any]:
     study.optimize(
         objective,
         n_trials=context.optimize_cfg.n_trials,
-        n_jobs=1,
+        n_jobs=context.optimize_cfg.n_jobs,
         show_progress_bar=False,
     )
 
@@ -172,6 +172,7 @@ def run_stage(cfg: Any) -> dict[str, Any]:
             "run_key_components": context.run_key_components,
             "cv_folds": context.optimize_cfg.cv_folds,
             "opt_n_trials": context.optimize_cfg.n_trials,
+            "opt_n_jobs": context.optimize_cfg.n_jobs,
         },
     )
     write_json_atomic(

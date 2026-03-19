@@ -1,0 +1,337 @@
+hydra:
+  run:
+    dir: .
+  sweep:
+    dir: .
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra_plugins.hydra_joblib_launcher.joblib_launcher.JoblibLauncher
+    n_jobs: 4
+    backend: null
+    prefer: processes
+    require: null
+    verbose: 0
+    timeout: null
+    pre_dispatch: 2*n_jobs
+    batch_size: auto
+    temp_folder: null
+    max_nbytes: null
+    mmap_mode: r
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params:
+      target: SOH,RUL
+      features.active_set: full_cycle,charge_only
+  help:
+    app_name: ${hydra.job.name}
+    header: '${hydra.help.app_name} is powered by Hydra.
+
+      '
+    footer: 'Powered by Hydra (https://hydra.cc)
+
+      Use --hydra-help to view Hydra specific help
+
+      '
+    template: '${hydra.help.header}
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (group=option)
+
+
+      $APP_CONFIG_GROUPS
+
+
+      == Config ==
+
+      Override anything in the config (foo.bar=value)
+
+
+      $CONFIG
+
+
+      ${hydra.help.footer}
+
+      '
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][HYDRA] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+      - console
+    loggers:
+      logging_example:
+        level: DEBUG
+    disable_existing_loggers: false
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        stream: ext://sys.stdout
+      file:
+        class: logging.FileHandler
+        formatter: simple
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+    root:
+      level: INFO
+      handlers:
+      - console
+      - file
+    disable_existing_loggers: false
+  env: {}
+  mode: MULTIRUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: null
+  overrides:
+    hydra: []
+    task:
+    - stage=optimize
+  job:
+    name: pipeline
+    chdir: false
+    override_dirname: stage=optimize
+    id: ???
+    num: ???
+    config_name: modeling
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /Users/clarafarias/code/severson_features_soh_rul
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: /Users/clarafarias/code/severson_features_soh_rul/config
+      schema: file
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: ???
+    choices:
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: default
+      hydra/hydra_logging: default
+      hydra/hydra_help: default
+      hydra/help: default
+      hydra/sweeper: basic
+      hydra/launcher: joblib
+      hydra/output: default
+  verbose: false
+stage: optimize
+target: SOH
+feature_sets:
+  full_cycle:
+    id: full_cycle
+    columns:
+    - V_mean
+    - V_median
+    - V_std
+    - V_iqr
+    - V_kurtosis
+    - V_entropy
+    - I_mean
+    - I_median
+    - I_std
+    - I_iqr
+    - I_kurtosis
+    - T_mean
+    - T_median
+    - T_std
+    - T_iqr
+    - T_kurtosis
+  charge_only:
+    id: charge_only
+    columns:
+    - charge_V_mean
+    - charge_V_median
+    - charge_V_std
+    - charge_V_iqr
+    - charge_V_kurtosis
+    - charge_V_entropy
+    - charge_I_mean
+    - charge_I_median
+    - charge_I_std
+    - charge_I_iqr
+    - charge_I_kurtosis
+    - charge_T_mean
+    - charge_T_median
+    - charge_T_std
+    - charge_T_iqr
+    - charge_T_kurtosis
+  full_cycle_no_temperature:
+    id: full_cycle_no_temperature
+    columns:
+    - V_mean
+    - V_median
+    - V_std
+    - V_iqr
+    - V_kurtosis
+    - V_entropy
+    - I_mean
+    - I_median
+    - I_std
+    - I_iqr
+    - I_kurtosis
+  charge_only_no_temperature:
+    id: charge_only_no_temperature
+    columns:
+    - charge_V_mean
+    - charge_V_median
+    - charge_V_std
+    - charge_V_iqr
+    - charge_V_kurtosis
+    - charge_V_entropy
+    - charge_I_mean
+    - charge_I_median
+    - charge_I_std
+    - charge_I_iqr
+    - charge_I_kurtosis
+data:
+  features_path: data/interim/features.parquet
+  protocol_column: charge_policy
+split:
+  train_cells_proportion: 0.8
+  seed: 42
+  split_dir: ./results/modeling/splits
+  force_recreate: false
+features:
+  active_set: full_16
+  id: ${feature_sets.${features.active_set}.id}
+  columns: ${feature_sets.${features.active_set}.columns}
+  hash_mode: order_invariant
+  selection_mode: base
+  topk:
+    k_values:
+    - 2
+    - 4
+    - 6
+    - 8
+    - 10
+    - 12
+    - 14
+    - 16
+    selection_rule: smallest_feasible
+    constraints:
+      tau_rmse: 0.05
+      tau_width: 0.1
+model:
+  name: extratrees
+  n_jobs: 1
+optimize:
+  enabled: true
+  n_trials: 20
+  n_jobs: 1
+  cv_folds: 5
+  save_cv_trials: true
+  objective:
+    tau_gap: 0.05
+    lambda_gap: 0.5
+  search_space:
+    n_estimators:
+      type: int
+      low: 50
+      high: 500
+    criterion:
+      type: fixed
+      value: squared_error
+    max_depth:
+      type: int
+      low: 3
+      high: 20
+    min_samples_split:
+      type: int
+      low: 2
+      high: 20
+    min_samples_leaf:
+      type: int
+      low: 1
+      high: 10
+    max_features:
+      type: categorical
+      choices:
+      - sqrt
+      - log2
+      - null
+conformal:
+  enabled: true
+  alpha: 0.1
+  calibration_proportion: 0.2
+ranking:
+  n_permutations: 10
+  weights:
+    rmse: 0.7
+    uncertainty: 0.3
+  rescale:
+    mode: quantile_clipped_minmax
+    clip_low_q: 0.05
+    clip_high_q: 0.95
+robustness:
+  mode: protocol_lopo
+weighting:
+  enabled: false
+  strategy: none
+  n_bins: 10
+  long_life_quantile: 0.75
+  long_life_boost_factor: 2.0
+predict:
+  split: test
+artifacts:
+  root_dir: ./results_refactored/modeling
+  naming_key: feature_id_or_hash
+  run_key_fields:
+  - target
+  - feature_hash
+  - split_seed
+  - model_name
+  - weighting_strategy
+  - k_selected
+  overwrite: false
+  require_exact_match: true
