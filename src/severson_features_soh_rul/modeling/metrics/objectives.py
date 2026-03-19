@@ -5,31 +5,24 @@ from __future__ import annotations
 import numpy as np
 
 
-def overfit_gap(
-    rmse_train: float, rmse_val: float, eps: float = 1e-12
-) -> float:
-    """Compute bounded relative overfitting gap term."""
-    if rmse_val <= eps:
-        return 0.0
-    return max(0.0, float(rmse_val - rmse_train)) / max(float(rmse_val), eps)
+def overfit_gap(rmse_train: float, rmse_val: float) -> float:
+    """Compute bounded absolute overfitting gap term."""
+    return max(0.0, float(rmse_val - rmse_train))
 
 
 def fold_objective(
     rmse_train: float,
     rmse_val: float,
-    tau_gap: float,
     lambda_gap: float,
 ) -> float:
     """Compute per-fold optimization objective value."""
     gap = overfit_gap(rmse_train=rmse_train, rmse_val=rmse_val)
-    penalty = max(0.0, gap - float(tau_gap))
-    return float(rmse_val) + float(lambda_gap) * penalty
+    return float(rmse_val) + float(lambda_gap) * gap
 
 
 def aggregate_objective(
     rmse_train_values: list[float],
     rmse_val_values: list[float],
-    tau_gap: float,
     lambda_gap: float,
 ) -> dict[str, float]:
     """Aggregate fold objective components across CV folds."""
@@ -37,7 +30,7 @@ def aggregate_objective(
         overfit_gap(rmse_train=tr, rmse_val=val)
         for tr, val in zip(rmse_train_values, rmse_val_values)
     ]
-    penalties = [max(0.0, gap - float(tau_gap)) for gap in gaps]
+    penalties = [float(gap) for gap in gaps]
 
     rmse_val_mean = float(np.mean(rmse_val_values))
     objective = rmse_val_mean + float(lambda_gap) * float(np.mean(penalties))

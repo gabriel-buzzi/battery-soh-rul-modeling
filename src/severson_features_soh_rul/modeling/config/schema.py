@@ -18,7 +18,6 @@ from severson_features_soh_rul.modeling.config.defaults import (
     DEFAULT_LONG_LIFE_QUANTILE,
     DEFAULT_OBJECTIVE_LAMBDA_GAP,
     DEFAULT_OPTIMIZE_N_JOBS,
-    DEFAULT_OBJECTIVE_TAU_GAP,
     DEFAULT_PROTOCOL_COLUMN,
     DEFAULT_RANKING_CLIP_HIGH_Q,
     DEFAULT_RANKING_CLIP_LOW_Q,
@@ -89,7 +88,6 @@ class OptimizeConfig:
     n_trials: int
     n_jobs: int
     cv_folds: int
-    tau_gap: float
     lambda_gap: float
     save_cv_trials: bool
 
@@ -252,7 +250,6 @@ def parse_optimize_config(cfg: DictConfig) -> OptimizeConfig:
         n_trials=int(cfg.optimize.n_trials),
         n_jobs=n_jobs,
         cv_folds=int(cfg.optimize.cv_folds),
-        tau_gap=float(objective_cfg.get("tau_gap", DEFAULT_OBJECTIVE_TAU_GAP)),
         lambda_gap=float(
             objective_cfg.get("lambda_gap", DEFAULT_OBJECTIVE_LAMBDA_GAP)
         ),

@@ -54,7 +54,7 @@ def _build_cfg(tmp_path: Path, features_path: Path, root_name: str) -> object:
                 "n_trials": 1,
                 "cv_folds": 2,
                 "save_cv_trials": True,
-                "objective": {"tau_gap": 0.05, "lambda_gap": 0.5},
+                "objective": {"lambda_gap": 0.5},
                 "search_space": {
                     "n_estimators": {"type": "fixed", "value": 20},
                     "criterion": {"type": "fixed", "value": "squared_error"},

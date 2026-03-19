@@ -103,8 +103,7 @@ optimize:
   cv_folds: 5
   save_cv_trials: true
   objective:
-    tau_gap: 0.05
-    lambda_gap: 0.5
+    lambda_gap: 0.5 # overfit gap weight on final cost
   search_space:
     n_estimators:
       type: int
@@ -131,7 +130,7 @@ optimize:
 
 conformal:
   enabled: true
-  alpha: 0.1
+  alpha: 0.05 # 1 - alpha = confidence level
   calibration_proportion: 0.2
 
 ranking:

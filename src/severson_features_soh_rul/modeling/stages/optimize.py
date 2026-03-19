@@ -107,7 +107,7 @@ def run_stage(cfg: Any) -> dict[str, Any]:
             rmse_train = rmse(y_true=y_tr, y_pred=y_tr_pred)
             rmse_val = rmse(y_true=y_val, y_pred=y_val_pred)
             gap = overfit_gap(rmse_train=rmse_train, rmse_val=rmse_val)
-            penalty = max(0.0, gap - context.optimize_cfg.tau_gap)
+            penalty = gap
             objective_fold = (
                 rmse_val + context.optimize_cfg.lambda_gap * penalty
             )
@@ -129,7 +129,6 @@ def run_stage(cfg: Any) -> dict[str, Any]:
         aggregate = aggregate_objective(
             rmse_train_values=train_rmse_values,
             rmse_val_values=val_rmse_values,
-            tau_gap=context.optimize_cfg.tau_gap,
             lambda_gap=context.optimize_cfg.lambda_gap,
         )
         trial.set_user_attr("sampled_params", trial_params)
