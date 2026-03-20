@@ -6,7 +6,7 @@ hydra:
     subdir: ${hydra.job.num}
   launcher:
     _target_: hydra_plugins.hydra_joblib_launcher.joblib_launcher.JoblibLauncher
-    n_jobs: 4
+    n_jobs: 2
     backend: null
     prefer: processes
     require: null
@@ -22,7 +22,7 @@ hydra:
     max_batch_size: null
     params:
       target: SOH,RUL
-      features: full_cycle,charge_only
+      features: full_cycle
   help:
     app_name: ${hydra.job.name}
     header: '${hydra.help.app_name} is powered by Hydra.
@@ -123,15 +123,14 @@ hydra:
   output_subdir: null
   overrides:
     hydra: []
-    task:
-    - stage=all_stages
+    task: []
   job:
     name: pipeline
     chdir: false
-    override_dirname: stage=all_stages
+    override_dirname: ''
     id: ???
     num: ???
-    config_name: modeling
+    config_name: config
     env_set: {}
     env_copy: []
     config:
@@ -156,6 +155,7 @@ hydra:
     output_dir: ???
     choices:
       features: full_cycle
+      environment@_global_: local
       hydra/env: default
       hydra/callbacks: null
       hydra/job_logging: default
@@ -166,30 +166,39 @@ hydra:
       hydra/launcher: joblib
       hydra/output: default
   verbose: false
-features:
-  id: full_cycle
-  columns:
-  - V_mean
-  - V_median
-  - V_std
-  - V_iqr
-  - V_kurtosis
-  - V_entropy
-  - I_mean
-  - I_median
-  - I_std
-  - I_iqr
-  - I_kurtosis
-  - T_mean
-  - T_median
-  - T_std
-  - T_iqr
-  - T_kurtosis
 stage: all_stages
 target: SOH
+random_seed: 42
 data:
+  external_data_paths:
+  - data/raw/2017-05-12_batchdata_updated_struct_errorcorrect.mat
+  - data/raw/2017-06-30_batchdata_updated_struct_errorcorrect.mat
+  - data/raw/2018-04-12_batchdata_updated_struct_errorcorrect.mat
+  loaded_data_path: data/external/cells_data.h5
+  min_cycle_length: 100
+  max_cycle_length: 6000
+  cells_rated_capacity: 1.1
+  margin_for_upper_capacity_bound: 1.2
+  time_jump_threshold: 400
+  interpolate: false
+  target_frequency: 1
+  processed_cells_data_folder: data/processed/cells
+  eol_definition: 80
+  charge_current_threshold: 0.0
   features_path: data/interim/features.parquet
+  features_data_path: ${data.features_path}
+  train_cells_proportion: ${split.train_cells_proportion}
+  features_process_window_size: 10
+  features_process_savgol_order: 1
+  train_data_path: data/interim/train_df.parquet
+  test_data_path: data/interim/test_df.parquet
   protocol_column: charge_policy
+analysis:
+  figures_folder: ./paper/figures
+  example_cell: b1c20
+modeling:
+  optimization_results_dir: ./results/optimization/
+  evaluation_results_dir: ./results/evaluation/
 split:
   train_cells_proportion: 0.8
   seed: 42
@@ -213,7 +222,7 @@ model:
   n_jobs: 1
 optimize:
   enabled: true
-  n_trials: 10
+  n_trials: 3
   n_jobs: 1
   cv_folds: 5
   save_cv_trials: true
@@ -280,3 +289,22 @@ artifacts:
   - k_selected
   overwrite: false
   require_exact_match: true
+features:
+  id: full_cycle
+  columns:
+  - V_mean
+  - V_median
+  - V_std
+  - V_iqr
+  - V_kurtosis
+  - V_entropy
+  - I_mean
+  - I_median
+  - I_std
+  - I_iqr
+  - I_kurtosis
+  - T_mean
+  - T_median
+  - T_std
+  - T_iqr
+  - T_kurtosis

@@ -5,7 +5,7 @@ defaults:
   - _self_
 
 hydra:
-  mode: RUN
+  mode: MULTIRUN
   run:
     dir: .
   sweep:
@@ -16,6 +16,6 @@ hydra:
   sweeper:
     params:
       target: SOH,RUL
-      features: full_cycle,charge_only
+      features: full_cycle,full_cycle_no_temperature #,charge_only
   launcher:
-    n_jobs: 2 # n_jobs for parallel hydra runs
+    n_jobs: 4 # n_jobs for parallel hydra runs
