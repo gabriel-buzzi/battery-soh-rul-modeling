@@ -138,15 +138,17 @@ def test_baseline_flow_matches_manual_chain(tmp_path: Path) -> None:
     flow_result = run_baseline_flow(flow_cfg)
 
     manual_predictions = (
-        pd.read_csv(
-            Path(manual_predict_result["stage_dir"]) / "predictions_test.csv"
+        pd.read_parquet(
+            Path(manual_predict_result["stage_dir"])
+            / "predictions_test.parquet"
         )
         .sort_values(["cell", "cycle"])
         .reset_index(drop=True)
     )
     flow_predictions = (
-        pd.read_csv(
-            Path(flow_result["predict"]["stage_dir"]) / "predictions_test.csv"
+        pd.read_parquet(
+            Path(flow_result["predict"]["stage_dir"])
+            / "predictions_test.parquet"
         )
         .sort_values(["cell", "cycle"])
         .reset_index(drop=True)

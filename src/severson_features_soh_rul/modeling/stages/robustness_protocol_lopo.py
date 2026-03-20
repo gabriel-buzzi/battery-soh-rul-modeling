@@ -15,7 +15,7 @@ from severson_features_soh_rul.modeling.artifacts.resolver import (
 )
 from severson_features_soh_rul.modeling.artifacts.writer import (
     prepare_stage_dir,
-    write_csv_atomic,
+    write_parquet_atomic,
     write_resolved_config,
     write_run_info,
 )
@@ -48,7 +48,7 @@ def run_stage(cfg: Any) -> dict[str, Any]:
         run_key=context.run_key,
         stage="robustness_protocol_lopo",
         required_files=[
-            "predictions_protocol_lopo.csv",
+            "predictions_protocol_lopo.parquet",
             "config.resolved.yaml",
             "run_info.json",
         ],
@@ -174,8 +174,8 @@ def run_stage(cfg: Any) -> dict[str, Any]:
             "n_protocols": len(protocols),
         },
     )
-    write_csv_atomic(
-        output_path=stage_dir / "predictions_protocol_lopo.csv",
+    write_parquet_atomic(
+        output_path=stage_dir / "predictions_protocol_lopo.parquet",
         df=output_df,
     )
 

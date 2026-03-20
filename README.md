@@ -147,7 +147,7 @@ results/modeling/<run_key>/<stage>/
 Each stage writes:
 - `config.resolved.yaml`
 - `run_info.json`
-- stage-specific artifacts (for example `predictions_test.csv`, `best_params.json`, ranking/top-k outputs)
+- stage-specific artifacts (for example `predictions_test.parquet`, `best_params.json`, ranking/top-k outputs)
 
 ### 4. Notes on Reproducibility and Caching
 

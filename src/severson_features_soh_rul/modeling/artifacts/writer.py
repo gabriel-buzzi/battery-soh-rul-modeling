@@ -92,6 +92,26 @@ def write_csv_atomic(output_path: Path, df: pd.DataFrame) -> Path:
     return output_path
 
 
+def write_parquet_atomic(output_path: Path, df: pd.DataFrame) -> Path:
+    """Write Parquet atomically."""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        mode="wb",
+        suffix=".tmp",
+        prefix=".tmp_",
+        dir=str(output_path.parent),
+        delete=False,
+    ) as tmp_file:
+        tmp_path = Path(tmp_file.name)
+    try:
+        df.to_parquet(tmp_path, index=False)
+        tmp_path.replace(output_path)
+    finally:
+        if tmp_path.exists():
+            tmp_path.unlink(missing_ok=True)
+    return output_path
+
+
 def write_joblib_atomic(output_path: Path, payload: Any) -> Path:
     """Write joblib artifact atomically."""
     output_path.parent.mkdir(parents=True, exist_ok=True)

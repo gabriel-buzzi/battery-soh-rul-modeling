@@ -18,7 +18,7 @@ from severson_features_soh_rul.modeling.artifacts.resolver import (
 )
 from severson_features_soh_rul.modeling.artifacts.writer import (
     prepare_stage_dir,
-    write_csv_atomic,
+    write_parquet_atomic,
     write_resolved_config,
     write_run_info,
 )
@@ -47,7 +47,7 @@ def run_stage(cfg: Any) -> dict[str, Any]:
         run_key=context.run_key,
         stage="permutation_importance",
         required_files=[
-            "predictions_permutation_importance.csv",
+            "predictions_permutation_importance.parquet",
             "config.resolved.yaml",
             "run_info.json",
         ],
@@ -182,8 +182,8 @@ def run_stage(cfg: Any) -> dict[str, Any]:
             "optimize_stage_dir": str(optimize_stage_dir),
         },
     )
-    write_csv_atomic(
-        output_path=stage_dir / "predictions_permutation_importance.csv",
+    write_parquet_atomic(
+        output_path=stage_dir / "predictions_permutation_importance.parquet",
         df=predictions_df,
     )
 

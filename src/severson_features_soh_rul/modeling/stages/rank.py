@@ -64,12 +64,21 @@ def run_stage(cfg: Any) -> dict[str, Any]:
         },
         require_exact_match=context.artifacts_cfg.require_exact_match,
     )
-    predictions_path = resolve_required_file(
-        stage_dir=permutation_stage_dir,
-        file_name="predictions_permutation_importance.csv",
-        stage="permutation_importance",
-    )
-    predictions_df = pd.read_csv(predictions_path)
+    try:
+        predictions_path = resolve_required_file(
+            stage_dir=permutation_stage_dir,
+            file_name="predictions_permutation_importance.parquet",
+            stage="permutation_importance",
+        )
+        predictions_df = pd.read_parquet(predictions_path)
+    except FileNotFoundError:
+        # Backward compatibility with older CSV artifacts.
+        predictions_path = resolve_required_file(
+            stage_dir=permutation_stage_dir,
+            file_name="predictions_permutation_importance.csv",
+            stage="permutation_importance",
+        )
+        predictions_df = pd.read_csv(predictions_path)
     _validate_predictions_contract(predictions_df=predictions_df)
 
     group_cols = ["feature", "fold", "permutation"]
