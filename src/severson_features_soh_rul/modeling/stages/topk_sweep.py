@@ -10,6 +10,7 @@ import numpy as np
 from omegaconf import OmegaConf
 import pandas as pd
 from sklearn.model_selection import GroupKFold
+from tqdm.auto import tqdm
 
 from severson_features_soh_rul.modeling.artifacts.resolver import (
     resolve_required_file,
@@ -122,8 +123,14 @@ def run_stage(cfg: Any) -> dict[str, Any]:
     sweep_rows: list[dict[str, Any]] = []
     all_features: dict[str, Any] | None = None
 
-    for k in k_values:
+    k_pbar = tqdm(
+        k_values,
+        desc="topk_sweep",
+        unit="k",
+    )
+    for k in k_pbar:
         selected_features = ranked_features[:k]
+        k_pbar.set_postfix({"k": int(k), "n_features": len(selected_features)})
         fold_metrics = _evaluate_k(
             train_df=context.train_df,
             X_train=X_train,

@@ -1,0 +1,125 @@
+stage: all_stages
+target: SOH
+random_seed: 42
+
+data:
+  external_data_paths:
+    - /mnt/toshiba_2tb/Data_Severson/2017-05-12_batchdata_updated_struct_errorcorrect.mat
+    - /mnt/toshiba_2tb/Data_Severson/2017-06-30_batchdata_updated_struct_errorcorrect.mat
+    - /mnt/toshiba_2tb/Data_Severson/2018-04-12_batchdata_updated_struct_errorcorrect.mat
+  loaded_data_path: data/external/cells_data.h5
+  min_cycle_length: 100
+  max_cycle_length: 6000
+  cells_rated_capacity: 1.1
+  margin_for_upper_capacity_bound: 1.2
+  time_jump_threshold: 400
+  interpolate: false
+  target_frequency: 1
+  processed_cells_data_folder: data/processed/cells
+  eol_definition: 80
+  charge_current_threshold: 0.0
+  features_path: data/interim/features.parquet
+  features_data_path: ${data.features_path}
+  train_cells_proportion: ${split.train_cells_proportion}
+  features_process_window_size: 10
+  features_process_savgol_order: 1
+  train_data_path: data/interim/train_df.parquet
+  test_data_path: data/interim/test_df.parquet
+  protocol_column: charge_policy
+
+analysis:
+  figures_folder: ./paper/figures
+  example_cell: b1c20
+
+modeling:
+  optimization_results_dir: ./results/optimization/
+  evaluation_results_dir: ./results/evaluation/
+
+split:
+  train_cells_proportion: 0.8
+  seed: 42
+  split_dir: ./results/modeling/splits
+  force_recreate: false
+
+topk:
+  k_values: [2, 4, 6, 8, 10, 12, 14, 16]
+  constraints:
+    tau_rmse: 0.05 # allowed percentage increase in rmse to select feasible k value
+    tau_width: 0.10 # allowed percentage increase in CI width to select feasible k value
+
+model:
+  name: extratrees
+  n_jobs: 1 # n_jobs for running the model, will be multiplied internally by optimize.n_jobs when stage is not optimize
+
+optimize:
+  enabled: true
+  n_trials: 10
+  n_jobs: 1 # n_jobs for parallel optimization trials
+  cv_folds: 5
+  save_cv_trials: true
+  objective:
+    lambda_gap: 0.5 # overfit gap weight on final cost
+  search_space:
+    n_estimators:
+      type: int
+      low: 50
+      high: 500
+    criterion:
+      type: fixed
+      value: squared_error
+    max_depth:
+      type: int
+      low: 3
+      high: 20
+    min_samples_split:
+      type: int
+      low: 2
+      high: 20
+    min_samples_leaf:
+      type: int
+      low: 1
+      high: 10
+    max_features:
+      type: categorical
+      choices: [sqrt, log2, null]
+
+conformal:
+  enabled: true
+  alpha: 0.05 # 1 - alpha = confidence level
+  calibration_proportion: 0.2
+
+ranking:
+  n_permutations: 10
+  weights:
+    rmse: 0.7
+    uncertainty: 0.3
+  rescale:
+    mode: quantile_clipped_minmax
+    clip_low_q: 0.05
+    clip_high_q: 0.95
+
+robustness:
+  mode: protocol_lopo
+
+weighting:
+  enabled: false
+  strategy: none
+  n_bins: 10
+  long_life_quantile: 0.75
+  long_life_boost_factor: 2.0
+
+predict:
+  split: test
+
+artifacts:
+  root_dir: ./results_refactored/modeling
+  naming_key: feature_id_or_hash
+  run_key_fields:
+    - target
+    - feature_hash
+    - split_seed
+    - model_name
+    - weighting_strategy
+    - k_selected
+  overwrite: false
+  require_exact_match: true

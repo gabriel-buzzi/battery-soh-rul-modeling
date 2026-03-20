@@ -38,7 +38,7 @@ from severson_features_soh_rul.modeling.stages.topk_sweep import (
 
 
 @hydra.main(
-    version_base=None, config_path="../../../config", config_name="modeling"
+    version_base=None, config_path="../../../config", config_name="config"
 )
 def run_pipeline(cfg: DictConfig) -> None:
     """Dispatch execution to selected stage."""

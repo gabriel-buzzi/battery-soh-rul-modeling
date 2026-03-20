@@ -1,56 +1,21 @@
-random_seed: 42
-
-data:
-  external_data_paths: # Paths to the .mat files provided by Severson et. al.
-    - data/raw/2017-05-12_batchdata_updated_struct_errorcorrect.mat 
-    - data/raw/2017-06-30_batchdata_updated_struct_errorcorrect.mat
-    - data/raw/2018-04-12_batchdata_updated_struct_errorcorrect.mat
-  loaded_data_path: data/external/cells_data.h5
-  min_cycle_length: 100 # number of samples
-  max_cycle_length: 6000 # number of samples
-  cells_rated_capacity: 1.1 # Ah
-  margin_for_upper_capacity_bound: 1.2
-  time_jump_threshold: 400 # sec
-  interpolate: False
-  target_frequency: 1 # Hz
-  processed_cells_data_folder: data/processed/cells
-  eol_definition: 80 # SoH
-  charge_current_threshold: 0.0 # A, used to isolate charge-step samples
-  features_data_path: data/interim/features.parquet
-  train_cells_proportion: 0.8
-  features_process_window_size: 10
-  features_process_savgol_order: 1
-  train_data_path: data/interim/train_df.parquet
-  test_data_path: data/interim/test_df.parquet
-
-modeling:
-  optimization_subset_frac: 0.1 # Proportion of the train data used to optimize hyperparams
-  target: SOH
-  num_features: 8
-  n_jobs: 2 # Available core for models training
-  feature_importances_dir: ./results/feature_importances/
-  max_trials: 50
-  early_stopping_patience: 10
-  optimization_results_dir: ./results/optimization/
-  evaluation_results_dir: ./results/evaluation/
-
-analysis:
-  figures_folder: ./paper/figures
-  # example_cell: b1c14 # Default cells compliant with most plots
-  example_cell: b1c20
-  # Worst cells for SOH: b1c20, b1c0, b2c1, b3c7, b2c42, b1c3, b3c39
-  # Worst cells for RUL: b3c7, b1c3, b2c1, b1c0, b3c25, b3c39, b1c36
-
 defaults:
+  - environment@_global_: local
+  - /features: full_cycle
+  - override /hydra/launcher: joblib
   - _self_
-  - model: tweedie
-  - override hydra/launcher: joblib
-  
+
 hydra:
-  launcher:
-    n_jobs: 8 # Concurrency of Hydra runs
+  mode: RUN
+  run:
+    dir: .
+  sweep:
+    dir: .
+  output_subdir: null
+  job:
+    chdir: false
   sweeper:
     params:
-      model: lightgbm,tweedie,knn,extra_trees
-      modeling.target: SOH,RUL,RUL_THROUGHPUT
-      modeling.num_features: 4,16
+      target: SOH,RUL
+      features: full_cycle,charge_only
+  launcher:
+    n_jobs: 2 # n_jobs for parallel hydra runs

@@ -246,7 +246,7 @@ def load_from_hdf5(filename: str) -> dict:
 
 
 @hydra.main(
-    version_base=None, config_path="../../../confing", config_name="config"
+    version_base=None, config_path="../../../config", config_name="config"
 )
 def load_data(cfg: DictConfig) -> None:
     """Load batches MATLAB files provided and build a HDF5 databased.

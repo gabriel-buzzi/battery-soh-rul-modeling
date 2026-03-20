@@ -154,7 +154,7 @@ def run_stage(cfg: Any) -> dict[str, Any]:
         objective,
         n_trials=context.optimize_cfg.n_trials,
         n_jobs=context.optimize_cfg.n_jobs,
-        show_progress_bar=False,
+        show_progress_bar=True,
     )
 
     best_trial = study.best_trial

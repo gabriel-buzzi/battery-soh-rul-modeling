@@ -10,6 +10,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import GroupKFold
+from tqdm.auto import tqdm
 
 from severson_features_soh_rul.modeling.artifacts.resolver import (
     resolve_required_file,
@@ -84,76 +85,90 @@ def run_stage(cfg: Any) -> dict[str, Any]:
     groups_train = context.train_df["cell"].astype(str)
 
     gkf = GroupKFold(n_splits=context.optimize_cfg.cv_folds)
+    fold_splits = list(gkf.split(X=X_train, y=y_train, groups=groups_train))
     prediction_rows: list[pd.DataFrame] = []
+    total_permutations = (
+        len(fold_splits)
+        * len(context.feature_cfg.columns)
+        * context.ranking_cfg.n_permutations
+    )
+    permutation_pbar = tqdm(
+        total=total_permutations,
+        desc="permutation_importance",
+        unit="perm",
+    )
 
-    for fold_id, (train_idx, val_idx) in enumerate(
-        gkf.split(X=X_train, y=y_train, groups=groups_train),
-        start=1,
-    ):
-        X_tr = X_train.iloc[train_idx]
-        X_val = X_train.iloc[val_idx]
-        y_tr = y_train.iloc[train_idx]
-        y_val = y_train.iloc[val_idx]
-        groups_tr = groups_train.iloc[train_idx]
+    try:
+        for fold_id, (train_idx, val_idx) in enumerate(fold_splits, start=1):
+            X_tr = X_train.iloc[train_idx]
+            X_val = X_train.iloc[val_idx]
+            y_tr = y_train.iloc[train_idx]
+            y_val = y_train.iloc[val_idx]
+            groups_tr = groups_train.iloc[train_idx]
 
-        fold_seed = context.model_cfg.random_seed + fold_id
-        fold_weights = build_sample_weights(
-            y_train=y_tr,
-            weighting_cfg=context.weighting_cfg,
-            reference_series=context.train_df.iloc[train_idx]["RUL"],
-        )
+            fold_seed = context.model_cfg.random_seed + fold_id
+            fold_weights = build_sample_weights(
+                y_train=y_tr,
+                weighting_cfg=context.weighting_cfg,
+                reference_series=context.train_df.iloc[train_idx]["RUL"],
+            )
 
-        base_model = build_model(
-            model_name=context.model_cfg.name,
-            model_params=best_params,
-            random_seed=fold_seed,
-            n_jobs=context.model_cfg.n_jobs,
-        )
-        model_bundle = fit_conformal_model(
-            base_model=base_model,
-            X_train=X_tr,
-            y_train=y_tr,
-            groups_train=groups_tr,
-            conformal_enabled=context.conformal_cfg.enabled,
-            alpha=context.conformal_cfg.alpha,
-            calibration_proportion=context.conformal_cfg.calibration_proportion,
-            random_seed=fold_seed,
-            sample_weight=fold_weights,
-        )
+            base_model = build_model(
+                model_name=context.model_cfg.name,
+                model_params=best_params,
+                random_seed=fold_seed,
+                n_jobs=context.model_cfg.n_jobs,
+            )
+            model_bundle = fit_conformal_model(
+                base_model=base_model,
+                X_train=X_tr,
+                y_train=y_tr,
+                groups_train=groups_tr,
+                conformal_enabled=context.conformal_cfg.enabled,
+                alpha=context.conformal_cfg.alpha,
+                calibration_proportion=context.conformal_cfg.calibration_proportion,
+                random_seed=fold_seed,
+                sample_weight=fold_weights,
+            )
 
-        for feature_idx, feature in enumerate(context.feature_cfg.columns):
-            for permutation_idx in range(context.ranking_cfg.n_permutations):
-                X_val_perm = X_val.copy()
-                seed = _build_permutation_seed(
-                    split_seed=context.split_cfg.seed,
-                    fold_id=fold_id,
-                    feature_idx=feature_idx,
-                    feature_name=feature,
-                    permutation_idx=permutation_idx,
-                )
-                rng = np.random.default_rng(seed)
-                X_val_perm.loc[:, feature] = rng.permutation(
-                    X_val_perm[feature].to_numpy()
-                )
-                y_pred, y_lo, y_hi = predict_with_intervals(
-                    model_bundle=model_bundle,
-                    X=X_val_perm,
-                )
-                shuffled_predictions = build_prediction_dataframe(
-                    base_df=context.train_df.iloc[val_idx],
-                    y_true=y_val,
-                    y_pred=y_pred,
-                    y_pred_lo=y_lo,
-                    y_pred_hi=y_hi,
-                    target=context.target,
-                    feature_columns=context.feature_cfg.columns,
-                    split_seed=context.split_cfg.seed,
-                    stage="permutation_importance_val",
-                )
-                shuffled_predictions["fold"] = fold_id
-                shuffled_predictions["feature"] = feature
-                shuffled_predictions["permutation"] = permutation_idx
-                prediction_rows.append(shuffled_predictions)
+            for feature_idx, feature in enumerate(context.feature_cfg.columns):
+                for permutation_idx in range(
+                    context.ranking_cfg.n_permutations
+                ):
+                    X_val_perm = X_val.copy()
+                    seed = _build_permutation_seed(
+                        split_seed=context.split_cfg.seed,
+                        fold_id=fold_id,
+                        feature_idx=feature_idx,
+                        feature_name=feature,
+                        permutation_idx=permutation_idx,
+                    )
+                    rng = np.random.default_rng(seed)
+                    X_val_perm.loc[:, feature] = rng.permutation(
+                        X_val_perm[feature].to_numpy()
+                    )
+                    y_pred, y_lo, y_hi = predict_with_intervals(
+                        model_bundle=model_bundle,
+                        X=X_val_perm,
+                    )
+                    shuffled_predictions = build_prediction_dataframe(
+                        base_df=context.train_df.iloc[val_idx],
+                        y_true=y_val,
+                        y_pred=y_pred,
+                        y_pred_lo=y_lo,
+                        y_pred_hi=y_hi,
+                        target=context.target,
+                        feature_columns=context.feature_cfg.columns,
+                        split_seed=context.split_cfg.seed,
+                        stage="permutation_importance_val",
+                    )
+                    shuffled_predictions["fold"] = fold_id
+                    shuffled_predictions["feature"] = feature
+                    shuffled_predictions["permutation"] = permutation_idx
+                    prediction_rows.append(shuffled_predictions)
+                    permutation_pbar.update(1)
+    finally:
+        permutation_pbar.close()
 
     predictions_df = pd.concat(prediction_rows, ignore_index=True)
     write_resolved_config(cfg=context.cfg, stage_dir=stage_dir)

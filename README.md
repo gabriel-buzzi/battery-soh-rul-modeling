@@ -105,7 +105,10 @@ The modeling flow now uses a single entrypoint:
 python -m severson_features_soh_rul.modeling.pipeline stage=<stage>
 ```
 
-Configuration is defined in `config/modeling.yaml`, with `features.columns` as the only feature source of truth.
+Configuration entrypoint is `config/config.yaml`, which selects an
+environment config from `config/environment/` (for example
+`environment=production` or `environment=local`). `features.columns`
+remains the only feature source of truth.
 
 #### 3.1 Baseline Flow (One Command)
 

@@ -17,9 +17,6 @@ from severson_features_soh_rul.modeling.stages.permutation_importance import (
 from severson_features_soh_rul.modeling.stages.predict import (
     run_stage as run_predict,
 )
-from severson_features_soh_rul.modeling.stages.rank import (
-    run_stage as run_rank,
-)
 from severson_features_soh_rul.modeling.stages.robustness_protocol_lopo import (
     run_stage as run_robustness_protocol_lopo,
 )
@@ -37,7 +34,7 @@ def run_stage(cfg: Any) -> dict[str, Any]:
     fit_result = run_fit_final_model(cfg)
     predict_result = run_predict(cfg)
     permutation_result = run_permutation_importance(cfg)
-    rank_result = run_rank(cfg)
+    # rank_result = run_rank(cfg)
     topk_result = run_topk_sweep(cfg)
     robustness_result = run_robustness_protocol_lopo(cfg)
     return {
@@ -47,7 +44,8 @@ def run_stage(cfg: Any) -> dict[str, Any]:
         "fit_final_model": fit_result,
         "predict": predict_result,
         "permutation_importance": permutation_result,
-        "rank": rank_result,
+        # dedicated rank run is not necessary here since topk_sweep runs it
+        # "rank": rank_result,
         "topk_sweep": topk_result,
         "robustness_protocol_lopo": robustness_result,
     }

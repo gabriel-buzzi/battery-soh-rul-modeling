@@ -7,6 +7,7 @@ import logging
 from typing import Any
 
 import pandas as pd
+from tqdm.auto import tqdm
 
 from severson_features_soh_rul.modeling.artifacts.resolver import (
     resolve_required_file,
@@ -87,7 +88,13 @@ def run_stage(cfg: Any) -> dict[str, Any]:
     )
     output_rows: list[pd.DataFrame] = []
 
-    for protocol_value in protocols:
+    protocol_pbar = tqdm(
+        protocols,
+        desc="robustness_protocol_lopo",
+        unit="protocol",
+    )
+    for protocol_value in protocol_pbar:
+        protocol_pbar.set_postfix({"held_out": str(protocol_value)})
         train_df = context.features_df[
             context.features_df[protocol_column].astype(str) != protocol_value
         ].copy()
