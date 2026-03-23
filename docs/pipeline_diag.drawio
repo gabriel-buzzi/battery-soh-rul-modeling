@@ -1,0 +1,25 @@
+<mxfile host="65bd71144e">
+    <diagram id="4o7UZrpkObm33Dc_NukI" name="Page-1">
+        <mxGraphModel dx="985" dy="529" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="3" value="Raw signals of V, I and T&amp;nbsp;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="40" y="40" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="Cycle Validation and Harmonization:&lt;div&gt;- Time gap correction&lt;/div&gt;&lt;div&gt;- Invalid-cycle filtering&lt;/div&gt;&lt;div&gt;- Sample-rate standardization&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="200" y="40" width="130" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="Statistical Feature Extraction&lt;br&gt;16 features per cycle" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="370" y="40" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="Cell-wise split&lt;div&gt;80% model train and optimization and 20% held-out for test&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="40" y="170" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="7" value="Cell-wise split&lt;div&gt;80% model train and optimization and 20% held-out for test&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="200" y="170" width="120" height="60" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

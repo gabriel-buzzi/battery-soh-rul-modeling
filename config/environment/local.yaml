@@ -28,7 +28,7 @@ data:
   protocol_column: charge_policy
 
 analysis:
-  figures_folder: ./paper/figures
+  figures_folder: ./paper/overleaf_project/
   example_cell: b1c20
 
 modeling:

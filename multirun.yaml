@@ -125,7 +125,7 @@ hydra:
     hydra: []
     task: []
   job:
-    name: pipeline
+    name: load_data
     chdir: false
     override_dirname: ''
     id: ???
