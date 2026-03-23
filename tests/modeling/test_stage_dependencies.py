@@ -42,7 +42,7 @@ def _build_cfg(tmp_path: Path, features_path: Path) -> object:
                     "tau_width": 0.1,
                 },
             },
-            "model": {"name": "extratrees", "n_jobs": 1},
+            "model": {"n_jobs": 1},
             "optimize": {
                 "enabled": True,
                 "n_trials": 2,
@@ -71,7 +71,7 @@ def _build_cfg(tmp_path: Path, features_path: Path) -> object:
             },
             "conformal": {
                 "enabled": True,
-                "alpha": 0.1,
+                "confidence_level": 0.9,
                 "calibration_proportion": 0.2,
             },
             "ranking": {

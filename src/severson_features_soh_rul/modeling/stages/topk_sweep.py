@@ -259,7 +259,6 @@ def _evaluate_k(
             reference_series=train_df.iloc[train_idx]["RUL"],
         )
         base_model = build_model(
-            model_name=context.model_cfg.name,
             model_params=best_params,
             random_seed=context.model_cfg.random_seed + fold_id,
             n_jobs=context.model_cfg.n_jobs,
@@ -270,7 +269,7 @@ def _evaluate_k(
             y_train=y_tr,
             groups_train=groups_tr,
             conformal_enabled=context.conformal_cfg.enabled,
-            alpha=context.conformal_cfg.alpha,
+            confidence_level=context.conformal_cfg.confidence_level,
             calibration_proportion=context.conformal_cfg.calibration_proportion,
             random_seed=context.model_cfg.random_seed + fold_id,
             sample_weight=fold_weights,

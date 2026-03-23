@@ -6,7 +6,7 @@ hydra:
     subdir: ${hydra.job.num}
   launcher:
     _target_: hydra_plugins.hydra_joblib_launcher.joblib_launcher.JoblibLauncher
-    n_jobs: 2
+    n_jobs: 4
     backend: null
     prefer: processes
     require: null
@@ -218,7 +218,6 @@ topk:
     tau_rmse: 0.05
     tau_width: 0.1
 model:
-  name: extratrees
   n_jobs: 1
 optimize:
   enabled: true
@@ -227,12 +226,12 @@ optimize:
   cv_folds: 5
   save_cv_trials: true
   objective:
-    lambda_gap: 0.5
+    lambda_gap: 1
   search_space:
     n_estimators:
       type: int
       low: 50
-      high: 500
+      high: 100
     criterion:
       type: fixed
       value: squared_error
@@ -256,7 +255,7 @@ optimize:
       - null
 conformal:
   enabled: true
-  alpha: 0.05
+  confidence_level: 0.95
   calibration_proportion: 0.2
 ranking:
   n_permutations: 10

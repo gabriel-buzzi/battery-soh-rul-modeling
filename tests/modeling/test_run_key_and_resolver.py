@@ -22,7 +22,7 @@ def test_run_key_is_deterministic() -> None:
         target="SOH",
         feature_hash="abc",
         split_seed=42,
-        model_name="extratrees",
+        model_name="extratrees_quantile",
         weighting_strategy="none",
         k_selected=8,
     )
@@ -45,7 +45,7 @@ def test_resolver_fails_on_ambiguous_match(tmp_path: Path) -> None:
         "target": "SOH",
         "feature_hash": "abc",
         "split_seed": 42,
-        "model_name": "extratrees",
+        "model_name": "extratrees_quantile",
         "weighting_strategy": "none",
         "k_selected": None,
     }
@@ -76,7 +76,7 @@ def test_resolver_can_match_none_key(tmp_path: Path) -> None:
                 "target": "SOH",
                 "feature_hash": "abc",
                 "split_seed": 42,
-                "model_name": "extratrees",
+                "model_name": "extratrees_quantile",
                 "weighting_strategy": "none",
                 "k_selected": None,
             }
@@ -88,7 +88,7 @@ def test_resolver_can_match_none_key(tmp_path: Path) -> None:
                 "target": "SOH",
                 "feature_hash": "abc",
                 "split_seed": 42,
-                "model_name": "extratrees",
+                "model_name": "extratrees_quantile",
                 "weighting_strategy": "none",
                 "k_selected": 4,
             }
@@ -102,7 +102,7 @@ def test_resolver_can_match_none_key(tmp_path: Path) -> None:
             "target": "SOH",
             "feature_hash": "abc",
             "split_seed": 42,
-            "model_name": "extratrees",
+            "model_name": "extratrees_quantile",
             "weighting_strategy": "none",
             "k_selected": None,
         },

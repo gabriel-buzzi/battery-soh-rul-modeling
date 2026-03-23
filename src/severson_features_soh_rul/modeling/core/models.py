@@ -4,21 +4,18 @@ from __future__ import annotations
 
 from typing import Any
 
-from sklearn.ensemble import ExtraTreesRegressor
+DEFAULT_MODEL_NAME = "extratrees_quantile"
 
 
 def build_model(
-    model_name: str,
     model_params: dict[str, Any] | None,
     random_seed: int,
     n_jobs: int,
-) -> ExtraTreesRegressor:
+) -> Any:
     """Build configured model instance.
 
     Parameters
     ----------
-    model_name : str
-        Supported model identifier.
     model_params : dict[str, Any] | None
         Optional hyperparameters.
     random_seed : int
@@ -28,16 +25,16 @@ def build_model(
 
     Returns
     -------
-    ExtraTreesRegressor
+    Any
         Instantiated estimator.
     """
-    normalized = str(model_name).strip().lower()
-    if normalized != "extratrees":
-        raise ValueError(
-            "Unsupported model_name='{}'. Supported: ['extratrees']".format(
-                model_name
-            )
-        )
+    try:
+        from quantile_forest import ExtraTreesQuantileRegressor
+    except ImportError as exc:
+        raise ImportError(
+            "quantile-forest is required for ExtraTreesQuantileRegressor. "
+            "Install dependency 'quantile-forest'."
+        ) from exc
 
     params: dict[str, Any] = {
         "n_estimators": 300,
@@ -49,9 +46,12 @@ def build_model(
         "bootstrap": False,
         "random_state": int(random_seed),
         "n_jobs": int(n_jobs),
+        # Keep point-prediction behavior in optimize/objective with median.
+        "default_quantiles": 0.5,
     }
     if model_params:
         params.update(model_params)
     params["random_state"] = int(random_seed)
     params["n_jobs"] = int(n_jobs)
-    return ExtraTreesRegressor(**params)
+    params.setdefault("default_quantiles", 0.5)
+    return ExtraTreesQuantileRegressor(**params)

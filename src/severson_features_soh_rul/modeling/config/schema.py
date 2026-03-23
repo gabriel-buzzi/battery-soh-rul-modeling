@@ -11,7 +11,6 @@ from omegaconf import DictConfig
 from severson_features_soh_rul.modeling.config.defaults import (
     DEFAULT_ARTIFACTS_OVERWRITE,
     DEFAULT_ARTIFACTS_REQUIRE_EXACT_MATCH,
-    DEFAULT_CONFORMAL_ALPHA,
     DEFAULT_CONFORMAL_CALIBRATION_PROPORTION,
     DEFAULT_LONG_LIFE_BOOST_FACTOR,
     DEFAULT_LONG_LIFE_QUANTILE,
@@ -46,7 +45,7 @@ SUPPORTED_WEIGHTING_STRATEGIES = {
     "sample_weight_inverse_life_density",
     "sample_weight_long_life_boost",
 }
-SUPPORTED_MODEL_NAMES = {"extratrees"}
+DEFAULT_MODEL_NAME = "extratrees_quantile"
 
 
 @dataclass(frozen=True)
@@ -93,7 +92,7 @@ class ConformalConfig:
     """Conformal inference configuration."""
 
     enabled: bool
-    alpha: float
+    confidence_level: float
     calibration_proportion: float
 
 
@@ -199,17 +198,10 @@ def parse_split_config(cfg: DictConfig) -> SplitConfig:
 
 def parse_model_config(cfg: DictConfig) -> ModelConfig:
     """Parse model configuration."""
-    model_name = str(cfg.model.name).strip().lower()
-    if model_name not in SUPPORTED_MODEL_NAMES:
-        raise ValueError(
-            "Unsupported model.name='{}'. Supported: {}".format(
-                model_name, sorted(SUPPORTED_MODEL_NAMES)
-            )
-        )
     return ModelConfig(
-        name=model_name,
+        name=DEFAULT_MODEL_NAME,
         random_seed=int(cfg.split.seed),
-        n_jobs=int(cfg.model.n_jobs),
+        n_jobs=int(cfg.model.get("n_jobs", 1)),
     )
 
 
@@ -235,9 +227,16 @@ def parse_optimize_config(cfg: DictConfig) -> OptimizeConfig:
 
 def parse_conformal_config(cfg: DictConfig) -> ConformalConfig:
     """Parse conformal configuration."""
+    confidence_level = float(cfg.conformal.confidence_level)
+    if not (0.0 < confidence_level < 1.0):
+        raise ValueError(
+            "conformal.confidence_level must be in (0, 1), got {}.".format(
+                confidence_level
+            )
+        )
     return ConformalConfig(
         enabled=bool(cfg.conformal.get("enabled", True)),
-        alpha=float(cfg.conformal.get("alpha", DEFAULT_CONFORMAL_ALPHA)),
+        confidence_level=float(confidence_level),
         calibration_proportion=float(
             cfg.conformal.get(
                 "calibration_proportion",

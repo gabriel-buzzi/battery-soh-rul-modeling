@@ -45,7 +45,7 @@ def _build_cfg(tmp_path: Path, features_path: Path, root_name: str) -> object:
                 "k_values": [1, 2],
                 "constraints": {"tau_rmse": 0.05, "tau_width": 0.1},
             },
-            "model": {"name": "extratrees", "n_jobs": 1},
+            "model": {"n_jobs": 1},
             "optimize": {
                 "enabled": True,
                 "n_trials": 1,
@@ -63,7 +63,7 @@ def _build_cfg(tmp_path: Path, features_path: Path, root_name: str) -> object:
             },
             "conformal": {
                 "enabled": True,
-                "alpha": 0.1,
+                "confidence_level": 0.8,
                 "calibration_proportion": 0.2,
             },
             "ranking": {
@@ -122,6 +122,7 @@ def _write_features(path: Path) -> None:
 def test_baseline_flow_matches_manual_chain(tmp_path: Path) -> None:
     """baseline_flow should match optimize->fit->predict artifacts."""
     pytest.importorskip("mapie")
+    pytest.importorskip("quantile_forest")
 
     features_path = tmp_path / "features.parquet"
     _write_features(features_path)

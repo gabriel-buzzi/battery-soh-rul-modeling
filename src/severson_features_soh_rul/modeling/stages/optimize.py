@@ -75,7 +75,6 @@ def run_stage(cfg: Any) -> dict[str, Any]:
             trial=trial, search_space=search_space
         )
         model = build_model(
-            model_name=context.model_cfg.name,
             model_params=trial_params,
             random_seed=context.model_cfg.random_seed,
             n_jobs=context.model_cfg.n_jobs,

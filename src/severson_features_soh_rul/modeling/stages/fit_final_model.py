@@ -93,7 +93,6 @@ def run_stage(cfg: Any) -> dict[str, Any]:
     )
 
     base_model = build_model(
-        model_name=context.model_cfg.name,
         model_params=best_params,
         random_seed=context.model_cfg.random_seed,
         n_jobs=context.model_cfg.n_jobs,
@@ -104,7 +103,7 @@ def run_stage(cfg: Any) -> dict[str, Any]:
         y_train=y_train,
         groups_train=groups_train,
         conformal_enabled=context.conformal_cfg.enabled,
-        alpha=context.conformal_cfg.alpha,
+        confidence_level=context.conformal_cfg.confidence_level,
         calibration_proportion=context.conformal_cfg.calibration_proportion,
         random_seed=context.model_cfg.random_seed,
         sample_weight=sample_weights,

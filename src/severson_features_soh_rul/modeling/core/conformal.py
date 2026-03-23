@@ -1,12 +1,14 @@
-"""MAPIE-based conformal regression helpers."""
+"""MAPIE-based quantile conformal regression helpers."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+import logging
 from typing import Any
 
 import numpy as np
 import pandas as pd
+from sklearn.base import clone
 from sklearn.model_selection import GroupShuffleSplit, train_test_split
 
 
@@ -15,7 +17,7 @@ class ConformalModelBundle:
     """Persisted conformal model payload."""
 
     model: Any
-    alpha: float
+    confidence_level: float
     conformal_enabled: bool
 
 
@@ -25,35 +27,39 @@ def fit_conformal_model(
     y_train: pd.Series,
     groups_train: pd.Series,
     conformal_enabled: bool,
-    alpha: float,
+    confidence_level: float,
     calibration_proportion: float,
     random_seed: int,
     sample_weight: np.ndarray | None = None,
 ) -> ConformalModelBundle:
-    """Fit MAPIE model with group-aware calibration split."""
+    """Fit quantile-conformal model with group-aware calibration split."""
+    X_train_values = _to_model_matrix(X_train)
+    y_train_values = _to_model_vector(y_train)
+
     if not conformal_enabled:
         fit_kwargs: dict[str, Any] = {}
         if sample_weight is not None:
             fit_kwargs["sample_weight"] = sample_weight
-        base_model.fit(X_train, y_train, **fit_kwargs)
+        base_model.fit(X_train_values, y_train_values, **fit_kwargs)
         return ConformalModelBundle(
             model=base_model,
-            alpha=float(alpha),
+            confidence_level=float(confidence_level),
             conformal_enabled=False,
         )
 
-    mapie_model = _fit_mapie_prefit(
+    cqr_model = _fit_mapie_quantile_prefit(
         base_model=base_model,
-        X_train=X_train,
-        y_train=y_train,
+        X_train=X_train_values,
+        y_train=y_train_values,
         groups_train=groups_train,
+        confidence_level=confidence_level,
         calibration_proportion=calibration_proportion,
         random_seed=random_seed,
         sample_weight=sample_weight,
     )
     return ConformalModelBundle(
-        model=mapie_model,
-        alpha=float(alpha),
+        model=cqr_model,
+        confidence_level=float(confidence_level),
         conformal_enabled=True,
     )
 
@@ -63,65 +69,134 @@ def predict_with_intervals(
     X: pd.DataFrame,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Predict point values and conformal intervals from model bundle."""
+    X_values = _to_model_matrix(X)
+
     if not model_bundle.conformal_enabled:
-        y_pred = model_bundle.model.predict(X)
+        y_pred = np.asarray(model_bundle.model.predict(X_values)).reshape(-1)
         nan_arr = np.full(shape=y_pred.shape[0], fill_value=np.nan)
         return y_pred, nan_arr, nan_arr
 
-    y_pred, intervals = model_bundle.model.predict(X, alpha=model_bundle.alpha)
-    interval_array = np.asarray(intervals)
+    interval_result = _predict_quantile_interval(
+        model=model_bundle.model,
+        X=X_values,
+    )
+    y_pred, interval_array = interval_result
+    y_pred = np.asarray(y_pred).reshape(-1)
+    interval_array = np.asarray(interval_array)
     if interval_array.ndim == 3:
-        interval_array = interval_array[:, :, 0]
-    y_pred_lo = interval_array[:, 0]
-    y_pred_hi = interval_array[:, 1]
+        interval_array = np.squeeze(interval_array, axis=-1)
+    if (
+        interval_array.ndim == 2
+        and interval_array.shape[0] == 2
+        and interval_array.shape[1] == y_pred.shape[0]
+    ):
+        interval_array = interval_array.T
+    y_pred_lo = np.minimum(interval_array[:, 0], interval_array[:, 1])
+    y_pred_hi = np.maximum(interval_array[:, 0], interval_array[:, 1])
     return y_pred, y_pred_lo, y_pred_hi
 
 
-def _fit_mapie_prefit(
+def _fit_mapie_quantile_prefit(
     base_model: Any,
-    X_train: pd.DataFrame,
-    y_train: pd.Series,
+    X_train: np.ndarray,
+    y_train: np.ndarray,
     groups_train: pd.Series,
+    confidence_level: float,
     calibration_proportion: float,
     random_seed: int,
     sample_weight: np.ndarray | None,
 ) -> Any:
-    """Fit MAPIE in prefit mode using a held-out calibration split."""
-    try:
-        from mapie.regression import MapieRegressor
-    except ImportError as exc:
-        raise ImportError(
-            "MAPIE is required for conformal prediction. Install dependency "
-            "'mapie'."
-        ) from exc
-
+    """Fit MAPIE quantile conformal model in prefit mode."""
     train_idx, calib_idx = _group_aware_calibration_split(
         groups=groups_train,
         calibration_proportion=calibration_proportion,
         random_seed=random_seed,
     )
 
-    X_fit = X_train.iloc[train_idx]
-    y_fit = y_train.iloc[train_idx]
-    X_calib = X_train.iloc[calib_idx]
-    y_calib = y_train.iloc[calib_idx]
+    X_fit = X_train[train_idx]
+    y_fit = y_train[train_idx]
+    X_calib = X_train[calib_idx]
+    y_calib = y_train[calib_idx]
 
-    fit_kwargs: dict[str, Any] = {}
+    alpha = float(1.0 - confidence_level)
+    lower_q = alpha / 2.0
+    upper_q = 1.0 - lower_q
+    quantiles = [lower_q, upper_q, 0.5]
+
+    fit_kwargs: dict[str, np.ndarray] = {}
     if sample_weight is not None:
         fit_kwargs["sample_weight"] = sample_weight[train_idx]
-    base_model.fit(X_fit, y_fit, **fit_kwargs)
+    estimators: list[Any] = []
+    for quantile in quantiles:
+        estimator = clone(base_model)
+        estimator.set_params(default_quantiles=float(quantile))
+        estimator.fit(X_fit, y_fit, **fit_kwargs)
+        estimators.append(estimator)
 
-    mapie_model = MapieRegressor(estimator=base_model, cv="prefit")
-    calib_kwargs: dict[str, Any] = {}
-    if sample_weight is not None:
-        calib_kwargs["sample_weight"] = sample_weight[calib_idx]
+    return _build_mapie_quantile_model(
+        estimators=estimators,
+        X_calib=X_calib,
+        y_calib=y_calib,
+        confidence_level=confidence_level,
+    )
 
+
+def _build_mapie_quantile_model(
+    estimators: list[Any],
+    X_calib: np.ndarray,
+    y_calib: np.ndarray,
+    confidence_level: float,
+) -> Any:
+    """Build and conformalize MAPIE v1 quantile model."""
     try:
-        mapie_model.fit(X_calib, y_calib, **calib_kwargs)
-    except TypeError:
-        mapie_model.fit(X_calib, y_calib)
+        from mapie.regression import ConformalizedQuantileRegressor
+    except ImportError as exc:
+        raise ImportError(
+            "MAPIE v1 is required for conformal prediction. Install "
+            "dependency 'mapie>=1,<2'."
+        ) from exc
 
-    return mapie_model
+    cqr_model = ConformalizedQuantileRegressor(
+        estimator=estimators,
+        confidence_level=float(confidence_level),
+        prefit=True,
+    )
+    cqr_model.conformalize(X_calib, y_calib)
+    return cqr_model
+
+
+def _predict_quantile_interval(
+    model: Any,
+    X: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Predict quantile-conformal intervals for MAPIE v1."""
+    previous_disable = logging.root.manager.disable
+    try:
+        logging.disable(logging.INFO)
+        y_pred, intervals = model.predict_interval(
+            X,
+            symmetric_correction=True,
+        )
+    finally:
+        logging.disable(previous_disable)
+    return np.asarray(y_pred), np.asarray(intervals)
+
+
+def _to_model_matrix(X: pd.DataFrame | np.ndarray | Any) -> np.ndarray:
+    """Convert tabular input to a 2D numpy matrix for model IO."""
+    if isinstance(X, pd.DataFrame):
+        return X.to_numpy()
+    arr = np.asarray(X)
+    if arr.ndim == 1:
+        return arr.reshape(-1, 1)
+    return arr
+
+
+def _to_model_vector(y: pd.Series | np.ndarray | Any) -> np.ndarray:
+    """Convert target input to a 1D numpy vector for model IO."""
+    if isinstance(y, pd.Series):
+        return y.to_numpy()
+    return np.asarray(y).reshape(-1)
 
 
 def _group_aware_calibration_split(

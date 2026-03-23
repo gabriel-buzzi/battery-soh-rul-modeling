@@ -32,6 +32,7 @@ def create_figure(
     aspect_ratio: float = 0.618,
     nrows: int = 1,
     ncols: int = 1,
+    **subplots_kwargs: Any,
 ) -> tuple[Any, Any]:
     """Create a matplotlib figure and axes using the configured layout."""
     # Matplotlib already loaded the matplotlibrc settings!
@@ -46,6 +47,7 @@ def create_figure(
         ncols=ncols,
         figsize=(width_in, height_in),
         constrained_layout=True,
+        **subplots_kwargs,
     )
     axes = ax.flat if hasattr(ax, "flat") else (ax,)
     for axis in axes:
