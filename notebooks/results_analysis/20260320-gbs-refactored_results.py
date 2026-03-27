@@ -83,6 +83,13 @@ def save_figure(fig: plt.Figure, filename: str, save_pdf=True) -> None:
 BASE_PATH = REPO_ROOT
 RESULTS_ROOT = BASE_PATH / "results_refactored" / "modeling"
 NOMINAL_CONFIDENCE_LEVEL = 0.95
+LIFE_STAGE_BINS = [0.0, 15.0, 70.0, 90.0, 100.0]
+LIFE_STAGE_LABELS = [
+    "Phase 1: Stabilization (0-15%)",
+    "Phase 2: Linear Degradation (15-70%)",
+    "Phase 3: Transition / Knee (70-90%)",
+    "Phase 4: End-of-Life (90-100%)",
+]
 
 ARTIFACTS = {
     "SOH": RESULTS_ROOT
@@ -163,6 +170,82 @@ def compute_global_summary(
             pred_df["interval_width"].corr(pred_df["abs_error"])
         ),
     }
+
+
+def add_relative_life_stage_columns(pred_df: pd.DataFrame) -> pd.DataFrame:
+    """Annotate predictions with relative life-consumed stage labels."""
+    enriched = pred_df.copy()
+    eol_cycle = (
+        enriched.groupby("cell")["cycle"].transform("max").astype(float)
+    )
+    safe_eol_cycle = eol_cycle.where(eol_cycle > 0, 1.0)
+    enriched["eol_cycle"] = eol_cycle
+    enriched["life_consumed_pct"] = (
+        100.0 * enriched["cycle"].astype(float) / safe_eol_cycle
+    ).clip(lower=0.0, upper=100.0)
+    enriched["life_stage"] = pd.cut(
+        enriched["life_consumed_pct"],
+        bins=LIFE_STAGE_BINS,
+        labels=LIFE_STAGE_LABELS,
+        include_lowest=True,
+        right=True,
+    )
+    enriched["life_stage"] = pd.Categorical(
+        enriched["life_stage"],
+        categories=LIFE_STAGE_LABELS,
+        ordered=True,
+    )
+    return enriched
+
+
+def compute_life_stage_metrics(
+    target: str, pred_df: pd.DataFrame
+) -> pd.DataFrame:
+    """Aggregate held-out metrics by normalized relative-life stage."""
+    staged_df = add_relative_life_stage_columns(pred_df)
+    rows: list[dict[str, object]] = []
+    for stage_label, chunk in staged_df.groupby("life_stage", observed=True):
+        if chunk.empty:
+            continue
+        if chunk["y_true"].nunique() > 1:
+            r2_value = float(r2_score(chunk["y_true"], chunk["y_pred"]))
+        else:
+            r2_value = np.nan
+        width_error_corr = chunk["interval_width"].corr(chunk["abs_error"])
+        rows.append(
+            {
+                "target": target,
+                "life_stage": str(stage_label),
+                "n_cells": int(chunk["cell"].nunique()),
+                "n_samples": int(chunk.shape[0]),
+                "life_consumed_pct_min": float(
+                    chunk["life_consumed_pct"].min()
+                ),
+                "life_consumed_pct_max": float(
+                    chunk["life_consumed_pct"].max()
+                ),
+                "rmse": float(
+                    root_mean_squared_error(chunk["y_true"], chunk["y_pred"])
+                ),
+                "r2": r2_value,
+                "empirical_coverage": float(chunk["covered"].mean()),
+                "mean_interval_width": float(
+                    chunk["interval_width"].mean()
+                ),
+                "median_interval_width": float(
+                    chunk["interval_width"].median()
+                ),
+                "width_error_corr": (
+                    float(width_error_corr)
+                    if pd.notna(width_error_corr)
+                    else np.nan
+                ),
+                "mean_target": float(chunk["y_true"].mean()),
+                "median_target": float(chunk["y_true"].median()),
+                "target_variance": float(chunk["y_true"].var(ddof=0)),
+            }
+        )
+    return pd.DataFrame(rows)
 
 
 def compute_cell_metrics(target: str, pred_df: pd.DataFrame) -> pd.DataFrame:
@@ -356,6 +439,15 @@ PROTOCOL_METRICS = {
     target: compute_protocol_metrics(target, bundle["lopo_predictions"])
     for target, bundle in TARGET_BUNDLES.items()
 }
+LIFE_STAGE_METRICS = pd.DataFrame(
+    [
+        row
+        for target, bundle in TARGET_BUNDLES.items()
+        for row in compute_life_stage_metrics(
+            target, bundle["predictions"]
+        ).to_dict("records")
+    ]
+)
 
 # %% [markdown]
 # ## Manuscript Table 1: Overall Test-Set Performance and Uncertainty
@@ -685,6 +777,65 @@ for axis, (target, bundle) in zip(np.ravel(axes), TARGET_BUNDLES.items()):
 add_panel_labels(axes)
 save_figure(fig, "results_parity_analysis")
 plt.show()
+
+# %% [markdown]
+# ### Held-Out Metrics by Relative Life Stage
+#
+# **Methodology.** To compare "lemons" and "marathoners" on a common scale, the
+# held-out predictions are also stratified by the percentage of life consumed,
+# defined as $L_{\mathrm{consumed}} = n / N_{\mathrm{EOL}} \times 100\%$, where
+# $n$ is the current cycle and $N_{\mathrm{EOL}}$ is the last available cycle
+# of that cell in the prediction artifact. Four relative-life stages are used:
+# stabilization (0--15%), linear degradation (15--70%), transition/knee
+# (70--90%), and end-of-life (90--100%).
+
+# %%
+life_stage_metrics_table = LIFE_STAGE_METRICS.copy()
+for column in [
+    "life_consumed_pct_min",
+    "life_consumed_pct_max",
+    "rmse",
+    "r2",
+    "empirical_coverage",
+    "mean_interval_width",
+    "median_interval_width",
+    "width_error_corr",
+    "mean_target",
+    "median_target",
+    "target_variance",
+]:
+    life_stage_metrics_table[column] = life_stage_metrics_table[column].map(
+        lambda value: f"{value:.3f}" if pd.notna(value) else "nan"
+    )
+
+for target in ["SOH", "RUL"]:
+    display(Markdown(f"### {target}: held-out metrics by relative life stage"))
+    display(
+        life_stage_metrics_table.loc[
+            life_stage_metrics_table["target"] == target,
+            [
+                "life_stage",
+                "n_cells",
+                "n_samples",
+                "life_consumed_pct_min",
+                "life_consumed_pct_max",
+                "target_variance",
+                "rmse",
+                "r2",
+                "empirical_coverage",
+                "mean_interval_width",
+                "median_interval_width",
+                "width_error_corr",
+            ],
+        ].reset_index(drop=True)
+    )
+
+# %% [markdown]
+# The relative-life stratification is useful because it removes raw cycle-life
+# as a confounder: a stage label now corresponds to the same fraction of
+# degradation progress for every cell. This makes it easier to test whether the
+# hardest regime is the early stabilization period, the quasi-linear mid-life,
+# the knee region, or the final end-of-life tail.
 
 # %% [markdown]
 # ## Manuscript Table 2: Cell-Level Heterogeneity
